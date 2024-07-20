@@ -1,0 +1,249 @@
+export div_d_e
+export div_hl_e
+export div_bc_de
+
+; section "temp division variables", WRAMX
+; _06h: ds 1
+; _07h: ds 1
+; _TMP: ds 1
+
+section "division functions", ROMX
+
+; div_d_e : divide d by e (unrolled)
+;
+; input
+; - d  : 8 bit dividend
+; -  e : 8 bit divisor
+;
+; output
+; - d  : 8 bit quotient
+; - a  : 8 bit remainder
+;
+; destroys af, de
+div_d_e:
+	xor a
+	
+	rept 8
+		sla d
+		rla
+
+		cp e
+		jr c, .skip\@
+			sub e
+			inc d
+		.skip\@
+	endr
+	
+	ret
+; div_d_e
+
+; div_hl_e : divide hl by e (unrolled)
+;
+; input
+; - hl : 16 bit dividend
+; -  e : 8 bit divisor
+;
+; output
+; - hl : 16 bit quotient
+; - a  : 8 bit remainder
+;
+; destroys af, e, hl
+div_hl_e:
+	xor a
+
+	rept 16
+		add hl, hl
+		rla
+
+		jr c, .skip_0\@
+		cp e
+		jr c, .skip_1\@
+		.skip_0\@
+			sub e
+			inc l
+		.skip_1\@
+	endr
+
+	ret
+; div_hl_e
+
+; div_bc_de : divide bc by de (unrolled)
+;
+; input
+; - bc : 16 bit dividend
+; - de : 16 bit divisor
+;
+; output
+; - bc : 16 bit quotient
+; - hl : 16 bit remainder
+;
+; destroys af, bc, de, hl
+div_bc_de:
+	ld hl, 0
+
+	rept 16
+		; sll c
+		sla c
+		inc c
+
+		rl b
+
+		; adc hl, hl
+		; (hl + hl) + c
+		ld a, l
+		adc a
+		ld l, a
+		ld a, h
+		adc a
+		ld h, a
+
+		; sbc hl, de
+		ld a, l
+		sbc e
+		ld l, a
+		ld a, h
+		sbc d
+		ld h, a
+
+		jr nc, .skip\@
+			add hl, de
+			dec c
+		.skip\@
+	endr
+
+	ret
+; div_bc_de
+
+; not working div16 from 8052 code
+	if 0
+	; R1 = b
+	; R0 = c
+	; R3 = d
+	; R2 = e
+	; R5 = h
+	; R4 = l
+
+	; div16_16:
+	;
+	; input
+	; - b : high byte dividend
+	; - c : low byte dividend
+	; - d : high byte divisor
+	; - e : low byte divisor
+	;
+	; output
+	; - b : high byte remainder
+	; - c : low byte remainder
+	; - h : high byte result
+	; - l : low byte result
+	div16_16:
+		xor a				;Clear carry initially
+		ld l, a				;Clear l working variable initially
+		ld h, a				;CLear h working variable initially
+		;ld b, a				;Clear B since B will count the number of left-shifted bits
+
+		.div1
+			inc a			;Increment counter for each left shift
+
+			rl e			;Shift low-byte left, rotate through carry to apply highest bit to high-byte
+			rl d			;Shift high-byte left high, rotating in carry from low-byte
+		jr nc, .div1		;Repeat until carry flag is set from high-byte
+
+		ld [_TMP], a
+
+		.div2				;Shift right the divisor
+			xor a
+			rr d			;Rotate high-byte of divisor right and into carry
+			rr e			;Rotate low-byte of divisor right, with carry from high-byte
+			xor a			;Clear carry, we don't need it anymore
+			ld a, b
+			ld [_07h], a	;Make a safe copy of the dividend high-byte
+			ld a, c
+			ld [_06h], a	;Make a safe copy of the dividend low-byte
+			ld a, c			;Move low-byte of dividend into accumulator
+			sub e			;Dividend - shifted divisor = result bit (no factor, only 0 or 1)
+			ld c, a			;Save updated dividend 
+			ld a, b			;Move high-byte of dividend into accumulator
+			sub d			;Subtract high-byte of divisor (all together 16-bit substraction)
+			ld b, a			;Save updated high-byte back in high-byte of divisor
+			jr nc, .div3	;If carry flag is NOT set, result is 1
+				ld a, [_07h];Otherwise result is 0, save copy of divisor to undo subtraction
+				ld b, a
+				ld a, [_06h]
+				ld c, a
+			.div3
+			ccf				;Invert carry, so it can be directly copied into result
+			rl l			;Shift carry flag into temporary result
+			rl h
+
+			ld a, [_TMP]
+			inc a
+			ld [_TMP], a
+		jr nz, .div2		;Now count backwards and repeat until "B" is zero
+
+		ret
+	;
+
+	; 8052 div16_16
+	;
+	; input
+	; - R1 : high byte dividend
+	; - R0 : low byte dividend
+	; - R3 : high byte divisor
+	; - R2 : low byte divisor
+	;
+	; output
+	; - R1 : high byte remainder
+	; - R0 : low byte remainder
+	; - R3 : high byte result
+	; - R2 : low byte result
+	if 0
+	div16_16:
+		CLR C	   ;Clear carry initially
+		MOV R4,#00h ;Clear R4 working variable initially
+		MOV R5,#00h ;CLear R5 working variable initially
+		MOV B,#00h  ;Clear B since B will count the number of left-shifted bits
+	div1:
+		INC B	  ;Increment counter for each left shift
+		MOV A,R2   ;Move the current divisor low byte into the accumulator
+		RLC A	  ;Shift low-byte left, rotate through carry to apply highest bit to high-byte
+		MOV R2,A   ;Save the updated divisor low-byte
+		MOV A,R3   ;Move the current divisor high byte into the accumulator
+		RLC A	  ;Shift high-byte left high, rotating in carry from low-byte
+		MOV R3,A   ;Save the updated divisor high-byte
+		JNC div1   ;Repeat until carry flag is set from high-byte
+	div2:		;Shift right the divisor
+		MOV A,R3   ;Move high-byte of divisor into accumulator
+		RRC A	  ;Rotate high-byte of divisor right and into carry
+		MOV R3,A   ;Save updated value of high-byte of divisor
+		MOV A,R2   ;Move low-byte of divisor into accumulator
+		RRC A	  ;Rotate low-byte of divisor right, with carry from high-byte
+		MOV R2,A   ;Save updated value of low-byte of divisor
+		CLR C	  ;Clear carry, we don't need it anymore
+		MOV 07h,R1 ;Make a safe copy of the dividend high-byte
+		MOV 06h,R0 ;Make a safe copy of the dividend low-byte
+		MOV A,R0   ;Move low-byte of dividend into accumulator
+		SUBB A,R2  ;Dividend - shifted divisor = result bit (no factor, only 0 or 1)
+		MOV R0,A   ;Save updated dividend 
+		MOV A,R1   ;Move high-byte of dividend into accumulator
+		SUBB A,R3  ;Subtract high-byte of divisor (all together 16-bit substraction)
+		MOV R1,A   ;Save updated high-byte back in high-byte of divisor
+		JNC div3   ;If carry flag is NOT set, result is 1
+		MOV R1,07h ;Otherwise result is 0, save copy of divisor to undo subtraction
+		MOV R0,06h
+	div3:
+		CPL C	  ;Invert carry, so it can be directly copied into result
+		MOV A,R4 
+		RLC A	  ;Shift carry flag into temporary result
+		MOV R4,A   
+		MOV A,R5
+		RLC A
+		MOV R5,A		
+		DJNZ B,div2 ;Now count backwards and repeat until "B" is zero
+		MOV R3,05h  ;Move result to R3/R2
+		MOV R2,04h  ;Move result to R3/R2
+		RET
+	endc
+	;
+	endc
+;

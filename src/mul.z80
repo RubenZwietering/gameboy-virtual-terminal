@@ -1,0 +1,391 @@
+include "macros.inc"
+
+export mul_h_e
+export imul_h_e
+export mul_a_de
+export mul_bc_de
+export imul_bc_de
+
+; INLINE_MUL_BC_DE : multiply de by bc, store in de and hl (left rotating, unrolled)
+;
+; input
+; - bc : 16 bit value
+; - de : 16 bit value
+;
+; output
+; - de : 16 bit top of result
+; - hl : 16 bit bottom of result
+; - note : de and hl form 32 bit result
+;
+; destroys f, de, hl
+macro INLINE_MUL_BC_DE
+	ld hl, 0
+
+	sla e ; optimised 1st iteration
+	rl d
+	jr nc, .no_init_hl
+		ld h, b
+		ld l, c
+	.no_init_hl
+
+	rept 15
+		add hl, hl
+		rl e
+		rl d
+		jr nc, .skip\@
+			add hl, bc
+			jr nc, .skip\@
+				inc de
+		.skip\@
+	endr
+endm
+; INLINE_MUL_BC_DE
+
+section "multiplication functions", ROMX
+
+; mul8_16l : multiply 8-bit value with a 16-bit value (left rotating, unrolled)
+	;
+	; input 
+	; - a  : 8 bit value 
+	; - de : 16 bit value
+	;
+	; output 
+	; - hl : result
+	;
+	; destroys af, hl
+	; mul8_16l:
+	; 	; FIXME: does this need to be 'ld hl, 0' ? 
+	; 	ld l, 0
+	; 	add a, a
+	; 	DO_IF_CARRY add hl\, de
+	; 	add hl, hl
+	; 	add a, a
+	; 	DO_IF_CARRY add hl\, de
+	; 	add hl, hl
+	; 	add a, a
+	; 	DO_IF_CARRY add hl\, de
+	; 	add hl, hl
+	; 	add a, a
+	; 	DO_IF_CARRY add hl\, de
+	; 	add hl, hl
+	; 	add a, a
+	; 	DO_IF_CARRY add hl\, de
+	; 	add hl, hl
+	; 	add a, a
+	; 	DO_IF_CARRY add hl\, de
+	; 	add hl, hl
+	; 	add a, a
+	; 	DO_IF_CARRY add hl\, de
+	; 	add hl, hl
+	; 	add a, a
+	; 	DO_IF_CARRY add hl\, de
+	; 	ret
+; mul8_16l
+
+; mul8_16r : multiply 8-bit value with a 16-bit value (right rotating)
+	; - note : put lowest value in a for most efficient calculation
+	;
+	; input 
+	; - a  : 8 bit value 
+	; - de : 16 bit value
+	;
+	; output 
+	; - hl : result
+	;
+	; destroys af, de, hl
+	; mul8_16r:
+	; 	ld hl, 0
+	; 	.loop
+	; 		srl a
+	; 		DO_IF_CARRY add hl\, de
+	; 		sla e
+	; 		rl d
+	; 		or a
+	; 	jr nz, .loop
+	; 	ret
+; mul8_16r
+
+
+
+
+
+; mul_h_e : multiply h by e, store in hl (left rotating, unrolled)
+;
+; input
+; - h  : 8 bit value
+; -  e : 8 bit value
+;
+; output
+; - hl : 16 bit result
+;
+; destroys af, d, hl
+mul_h_e:
+	ld d, 0 ; combining the overhead and optimised first iteration
+	sla h
+	sbc a
+	and e
+	ld l, a
+	
+	rept 7
+		add hl, hl
+		DO_IF_CARRY add hl\, de
+	endr
+	
+	ret
+; mul_h_e
+
+; imul_h_e : signed multiply h by e, store in hl (left rotating, unrolled)
+;
+; input
+; - h  : 8 bit signed value
+; -  e : 8 bit signed value
+;
+; output
+; - hl : 16 bit signed result
+;
+; destroys af, de, hl
+; - note : only destroys e if it is signed
+imul_h_e:
+	ld a, e
+	xor h
+	ld d, a
+
+	bit $7, e
+	jr z, .skip_unsign_e
+		COMPLEMENT e
+		inc e
+	.skip_unsign_e
+	
+	bit $7, h
+	jr z, .skip_unsign_h
+		COMPLEMENT h
+		inc h
+	.skip_unsign_h
+
+	sla h
+	sbc a
+	and e
+	ld l, a
+
+	ld a, d
+
+	ld d, 0
+	
+	rept 7
+		add hl, hl
+		DO_IF_CARRY add hl\, de
+	endr
+
+	and %10000000
+	jr z, .skip_sign_hl
+		COMPLEMENT h
+		COMPLEMENT l
+		inc hl
+	.skip_sign_hl
+
+	ret
+; imul_h_e
+
+; mul_a_de : multiply a by de, store in hl (left rotating, unrolled)
+;
+; input
+; - a  : 8 bit value
+; - de : 16 bit value
+;
+; output
+; - hl : 16 bit result
+;
+; destroys af, c, hl
+mul_a_de:
+	ld c, 0
+	ld h, c
+	ld l, c
+
+	add a, a ; optimised 1st iteration
+	jr nc, .no_init_hl
+		ld h, d
+		ld l, e
+	.no_init_hl
+
+	rept 7
+		add hl, hl
+		rla
+		DO_IF_CARRY add hl\, de
+		adc c
+	endr
+	
+	ret
+; mul_a_de
+
+; mul_bc_de : multiply de by bc, store in de and hl (left rotating, unrolled)
+;
+; input
+; - bc : 16 bit value
+; - de : 16 bit value
+;
+; output
+; - de : 16 bit top of result
+; - hl : 16 bit bottom of result
+; - note : de and hl form 32 bit result
+;
+; destroys f, de, hl
+mul_bc_de:
+	INLINE_MUL_BC_DE
+	ret
+; mul_bc_de
+
+; mul_de_de : multiply de by de, store in de and hl (left rotating, unrolled)
+	;
+	; input
+	;
+	; de : 16 bit value
+	;
+	; output
+	;
+	; de : 16 bit top of result
+	;
+	; hl : 16 bit bottom of result
+	;
+	; de and hl form 32 bit result
+	;
+	; destroys f, de, hl
+	; mul_de_de:
+	; 	ld hl, 0
+
+	; 	sla e ; optimised 1st iteration
+	; 	rl d
+	; 	jr nc, .no_init_hl
+	; 		ld h, b
+	; 		ld l, c
+	; 	.no_init_hl
+
+	; 	add hl, hl
+	; 	rl e
+	; 	rl d
+	; 	jr nc, .skip_0
+	; 		add hl, bc
+	; 		jr nc, .skip_0
+	; 			inc de
+	; 	.skip_0
+		
+	; 	add hl, hl
+	; 	rl e
+	; 	rl d
+	; 	jr nc, .skip_15
+	; 		add hl, bc
+	; 		jr nc, .skip_15
+	; 			inc de
+	; 	.skip_15
+		
+	; 	ret
+; mul_de_de
+
+; imul_bc_de : signed multiply de by bc, store in de and hl (left rotating, unrolled)
+;
+; input
+; - bc : 16 bit signed value
+; - de : 16 bit signed value
+;
+; output
+; - de : 16 bit top of result
+; - hl : 16 bit bottom of result
+; - note : de and hl form 32 bit signed result
+;
+; destroys af, bc, de, hl
+; - note : only destroys bc if it is signed
+imul_bc_de:
+
+	ld h, b
+	ld l, d
+
+	bit $7, b
+	jr z, .skip_unsign_bc
+		COMPLEMENT b
+		COMPLEMENT c
+		inc bc
+	.skip_unsign_bc
+	
+	bit $7, d
+	jr z, .skip_unsign_de
+		COMPLEMENT d
+		COMPLEMENT e
+		inc de
+	.skip_unsign_de
+
+	ld a, h
+	xor l
+
+	INLINE_MUL_BC_DE
+
+	and %10000000
+	jr z, .skip_sign_de_hl
+		COMPLEMENT d
+		COMPLEMENT e
+		COMPLEMENT h
+		COMPLEMENT l
+
+		inc l
+		jr nc, .skip_sign_de_hl
+			inc h
+			jr nc, .skip_sign_de_hl
+				inc e
+				jr nc, .skip_sign_de_hl
+					inc d
+	.skip_sign_de_hl
+	
+	ret
+; imul_bc_de
+
+; imul_bc_de : signed multiply de by bc, store in de and hl (left rotating)
+	;
+	; input
+	;
+	; bc : 16 bit signed value
+	;
+	; de : 16 bit signed value
+	;
+	; output
+	;
+	; de : 16 bit top of result
+	;
+	; hl : 16 bit bottom of result
+	;
+	; de and hl form 32 bit signed result
+	;
+	; destroys af, de, hl
+	; imul_bc_de:
+	; 	xor a
+	; 	ld h, a
+	; 	ld l, a
+	; 	bit $7, d
+	; 	jr z, .dpos
+	; 		; is this right?
+	; 		ld a, h
+	; 		sbc c
+	; 		ld h, a
+	; 		ld a, l
+	; 		sbc b
+	; 		ld l, a
+	; 		;sbc hl, bc
+	; 	.dpos
+
+	; 	ld a, b
+	; 	sra a
+	; 	and $c0
+	; 	add d
+	; 	ld d, a
+
+	; 	ld a, 16
+	; 	.loop
+	; 		add hl, hl
+	; 		rl e
+	; 		rl d
+	; 		jr nc, .mul0bit
+	; 			add hl, bc
+	; 			jr nc, .mul0bit
+	; 				inc de
+	; 		.mul0bit
+	; 		dec a
+	; 	jr nz, .loop
+	; 	ret
+; imul_bc_de

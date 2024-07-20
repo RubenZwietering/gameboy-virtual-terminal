@@ -1,0 +1,525 @@
+include "hardware.inc"
+include "screen.inc"
+include "char.inc"
+
+export cursor_x
+export cursor_y
+export cursor_blink_next_frame
+export character_buffer
+export character_buffer_end
+
+export init_character_mem
+
+export cursor_reset_blink
+export _gotoxy
+export _putchar
+export putchar
+export _puts
+export puts
+
+section "character variables", WRAMX
+cursor_x: 					ds 1
+cursor_y: 					ds 1
+cursor_blink_next_frame: 	ds 1
+
+section "character output buffer", WRAMX, ALIGN[8]
+character_buffer: 		ds SCRN_X_B * SCRN_Y_B
+character_buffer_end:
+def CHARACTER_BUFFER_SIZE equ character_buffer_end - character_buffer
+
+section "character functions", ROMX
+init_character_mem:
+	xor a
+	ld [cursor_x], a
+	ld [cursor_y], a
+
+	ld a, CURSOR_BLINK_RATE
+	ld [cursor_blink_next_frame], a
+
+	ld a, " "
+	ld hl, character_buffer
+	ld bc, CHARACTER_BUFFER_SIZE
+	call memset
+	ret
+
+
+; cursor_reset_blink
+;
+; destroys `af`
+cursor_reset_blink:
+	ld a, [frame_count]
+	add CURSOR_BLINK_RATE
+	ld [cursor_blink_next_frame], a
+	ld a, CURSOR_CHARACTER
+	ld [CURSOR_OBJECT_PTR + $02], a
+	ret
+; cursor_reset_blink
+
+
+; _gotoxy
+; 
+; c function signiature:
+; void gotoxy(unsigned char, unsigned char);
+; 
+; input:
+; - `a` : x
+; - `e` : y
+; 
+; destroys `a`
+_gotoxy:
+	ld [cursor_x], a
+	ld a, e
+	ld [cursor_y], a 
+; _gotoxy
+
+
+; scroll_buffer_once
+; 
+; destroys `af`, `bc`, `de`, `hl`
+scroll_buffer_once:
+	ld hl, character_buffer
+	ld de, character_buffer + SCRN_X_B
+	ld bc, CHARACTER_BUFFER_SIZE - SCRN_X_B
+	call memcpy
+
+	ld a, " "
+	ld hl, character_buffer + CHARACTER_BUFFER_SIZE - SCRN_X_B
+	ld bc, SCRN_X_B
+	call memset
+
+	jp cursor_reset_blink
+; scroll_buffer_once
+
+
+; scroll_buffer
+; 
+; input:
+; - `a` : lines
+; 
+; destroys `af`, `bc`, `de`, `hl`
+scroll_buffer:
+	or a
+	ret z
+
+	cp $01
+	jr z, scroll_buffer_once
+
+	cp SCRN_Y_B
+	jr nc, .clear
+
+	ld h, a
+	ld e, SCRN_X_B
+	call mul_h_e
+	; hl = a * SCRN_X_B
+
+	push hl
+	push hl
+
+	ld bc, character_buffer
+	add hl, bc
+	; hl = character_buffer + a * SCRN_X_B
+
+	pop bc
+
+	ld a, LOW(CHARACTER_BUFFER_SIZE)
+	sub c
+	ld c, a
+	ld a, HIGH(CHARACTER_BUFFER_SIZE)
+	sbc b
+	ld b, a
+	; bc = CHARACTER_BUFFER_SIZE - a * SCRN_X_B
+
+	push bc
+
+	ld d, h
+	ld e, l
+	ld hl, character_buffer
+
+	call memcpy
+
+	ld hl, character_buffer
+	pop bc
+	add hl, bc
+	; hl = character_buffer + CHARACTER_BUFFER_SIZE - a * SCRN_X_B
+
+	pop bc
+	; bc = a * SCRN_X_B
+
+	ld a, " "
+	jp memset
+
+	.clear
+	ld a, " "
+	ld hl, character_buffer
+	ld bc, CHARACTER_BUFFER_SIZE
+	jp memset
+; scroll_buffer
+
+; cursor_forward
+;
+; input:
+; - `a` : character
+; 
+; destoys `af`
+cursor_forward:
+	ld a, [cursor_x]
+	inc a
+	ld [cursor_x], a
+	cp a, SCRN_X_B
+	ret c
+
+	xor a
+	ld [cursor_x], a
+
+	ld a, [cursor_y]
+	inc a
+	ld [cursor_y], a
+	cp a, SCRN_Y_B
+	ret c
+
+	ld a, SCRN_Y_B - 1
+	ld [cursor_y], a
+
+	jp scroll_buffer_once
+; cursor_forward
+
+; _cursor_up
+;
+; ANSI control sequence:
+; CUU - CSI n A
+; 
+; c function signiature:
+; unsigned char cursor_up(unsigned char);
+; 
+; input:
+; - `a` : amount cursor to move
+; 
+; returns:
+; - `a` : amount cursor moved
+; 
+; destroys
+_cursor_up:
+
+	ret
+; _cursor_up
+
+; _putchar
+; 
+; c function signiature:
+; char putchar(char);
+; 
+; destroys `bc`, `de`, `hl`
+_putchar:
+	call putchar
+	ret
+; _putchar
+
+; putchar
+;
+; input 
+; - `a` : character
+;
+; destroys `af`, `bc`, `de`, `hl`
+putchar:
+	cp $20
+	jr c, .special_character
+	cp $7f
+	ret nc ;, .delete_character
+	
+	push af
+
+	ld a, [cursor_y]
+	cp SCRN_Y_B
+	jr nc, .return_without_write			; return if cursor is outsite visible area
+
+	ld e, a
+	ld h, SCRN_X_B
+	call mul_h_e
+
+	ld bc, character_buffer
+	add hl, bc
+	ld a, [cursor_x]
+	cp SCRN_X_B
+	jr nc, .return_without_write			; return if cursor is outsite visible area
+
+	ld c, a
+	ld b, 0
+	add hl, bc
+	
+	pop af
+	ld [hl], a
+	jr cursor_forward
+
+	.return_without_write
+	pop af
+	ret
+
+
+
+	.special_character
+	cp $00
+	ret z
+
+	cp $0a
+	jr nz, .not_linefeed
+
+		xor a
+		ld [cursor_x], a
+
+		ld a, [cursor_y]
+		inc a
+		ld [cursor_y], a
+		cp a, SCRN_Y_B
+		ret c
+
+		ld a, SCRN_Y_B - 1
+		ld [cursor_y], a
+
+		jp scroll_buffer_once
+	.not_linefeed
+
+	cp $0d
+	jr nz, .not_carriagereturn
+
+		xor a
+		ld [cursor_x], a
+
+		ret
+	.not_carriagereturn
+
+	cp $08
+	jr nz, .not_backspace
+
+		ld a, [cursor_x]
+		dec a
+		cp $ff
+		ret z
+
+		ld [cursor_x], a
+
+		ret
+	.not_backspace
+
+	cp $09
+	jr nz, .not_tab
+
+		ld a, [cursor_x]
+		cp SCRN_X_B - 1
+		ret z
+
+		ld c, a
+		and %00000111
+		ld b, a
+		ld a, 8
+		sub b
+		add c
+
+		cp SCRN_X_B - 1
+		ld [cursor_x], a
+		ret c
+
+		ld a, SCRN_X_B - 1
+		ld [cursor_x], a
+
+		ret
+	.not_tab
+
+	cp $0b
+	jr nz, .not_vtab
+
+		ld a, [cursor_y]
+		cp SCRN_Y_B
+		jp nc, scroll_buffer_once
+
+		inc a
+		ld [cursor_y], a
+
+		ret
+	.not_vtab
+
+	ret
+; putchar
+
+; _puts
+;
+; c function signiature:
+; char puts(const char*);
+;
+; input:
+; - `de` : string ptr
+;
+; destroys `af`, `bc`, `de`, `hl`
+_puts:
+	ld h, d
+	ld l, e
+	jp puts
+; _puts
+
+; puts
+;
+; input:
+; - `hl` : string ptr
+;
+; destroys `af`, `de`, `hl`
+puts:
+	ld a, [hli]
+	or a
+	jr z, .exit
+
+	push hl
+	call putchar
+	pop hl
+	jr puts
+
+	.exit
+
+	ld a, "\n"
+	jp putchar
+; puts
+
+
+; section "character width table", ROMX, ALIGN[8]
+; character_width_table:
+; 	;  %lcbtv-ww
+; 	; l = LINE FEED
+; 	; c = CARRIAGE RETURN
+; 	; b = BACKSPACE
+; 	; t = TAB
+; 	; v = VERTICAL TAB
+; 	; ww = character width
+; 	db %00000000		; $00 '\0' (^@)
+; 	db %00000000		; $01      (^A)
+; 	db %00000000		; $02      (^B)
+; 	db %00000000		; $03      (^C)
+; 	db %00000000		; $04      (^D)
+; 	db %00000000		; $05      (^E)
+; 	db %00000000		; $06      (^F)
+; 	db %00000000		; $07 '\a' (^G)
+; 	db %00100000		; $08 '\b' (^H)
+; 	db %00010000		; $09 '\t' (^I)
+; 	db %10000000		; $0a '\n' (^J)
+; 	db %00001000		; $0b '\v' (^K)
+; 	db %00000000		; $0c '\f' (^L)
+; 	db %01000000		; $0d '\r' (^M)
+; 	db %00000000		; $0e      (^N)
+; 	db %00000000		; $0f      (^O)
+
+; 	db %00000000		; $10      (^P)
+; 	db %00000000		; $11      (^Q)
+; 	db %00000000		; $12      (^R)
+; 	db %00000000		; $13      (^S)
+; 	db %00000000		; $14      (^T)
+; 	db %00000000		; $15      (^U)
+; 	db %00000000		; $16      (^V)
+; 	db %00000000		; $17      (^W)
+; 	db %00000000		; $18      (^X)
+; 	db %00000000		; $19      (^Y)
+; 	db %00000000		; $1a      (^Z)
+; 	db %00000000		; $1b '\e' (^[)
+; 	db %00000000		; $1c      (^\)
+; 	db %00000000		; $1d      (^])
+; 	db %00000000		; $1e      (^^)
+; 	db %00000000		; $1f      (^_)
+
+; 	db %00000001		; $20 ' '
+; 	db %00000001		; $21 '!'
+; 	db %00000001		; $22 '"'
+; 	db %00000001		; $23 '#'
+; 	db %00000001		; $24 '$'
+; 	db %00000001		; $25 '%'
+; 	db %00000001		; $26 '&'
+; 	db %00000001		; $27 '''
+; 	db %00000001		; $28 '('
+; 	db %00000001		; $29 ')'
+; 	db %00000001		; $2a '*'
+; 	db %00000001		; $2b '+'
+; 	db %00000001		; $2c ','
+; 	db %00000001		; $2d '-'
+; 	db %00000001		; $2e '.'
+; 	db %00000001		; $2f '/'
+
+; 	db %00000001		; $30 '0'
+; 	db %00000001		; $31 '1'
+; 	db %00000001		; $32 '2'
+; 	db %00000001		; $33 '3'
+; 	db %00000001		; $34 '4'
+; 	db %00000001		; $35 '5'
+; 	db %00000001		; $36 '6'
+; 	db %00000001		; $37 '7'
+; 	db %00000001		; $38 '8'
+; 	db %00000001		; $39 '9'
+; 	db %00000001		; $3a ':'
+; 	db %00000001		; $3b ';'
+; 	db %00000001		; $3c '<'
+; 	db %00000001		; $3d '='
+; 	db %00000001		; $3e '>'
+; 	db %00000001		; $3f '?'
+
+; 	db %00000001		; $40 '@'
+; 	db %00000001		; $41 'A'
+; 	db %00000001		; $42 'B'
+; 	db %00000001		; $43 'C'
+; 	db %00000001		; $44 'D'
+; 	db %00000001		; $45 'E'
+; 	db %00000001		; $46 'F'
+; 	db %00000001		; $47 'G'
+; 	db %00000001		; $48 'H'
+; 	db %00000001		; $49 'I'
+; 	db %00000001		; $4a 'J'
+; 	db %00000001		; $4b 'K'
+; 	db %00000001		; $4c 'L'
+; 	db %00000001		; $4d 'M'
+; 	db %00000001		; $4e 'N'
+; 	db %00000001		; $4f 'O'
+
+; 	db %00000001		; $50 'P'
+; 	db %00000001		; $51 'Q'
+; 	db %00000001		; $52 'R'
+; 	db %00000001		; $53 'S'
+; 	db %00000001		; $54 'T'
+; 	db %00000001		; $55 'U'
+; 	db %00000001		; $56 'V'
+; 	db %00000001		; $57 'W'
+; 	db %00000001		; $58 'X'
+; 	db %00000001		; $59 'Y'
+; 	db %00000001		; $5a 'Z'
+; 	db %00000001		; $5b '['
+; 	db %00000001		; $5c '\'
+; 	db %00000001		; $5d ']'
+; 	db %00000001		; $5e '^'
+; 	db %00000001		; $5f '_'
+
+; 	db %00000001		; $60 '`'
+; 	db %00000001		; $61 'a'
+; 	db %00000001		; $62 'b'
+; 	db %00000001		; $63 'c'
+; 	db %00000001		; $64 'd'
+; 	db %00000001		; $65 'e'
+; 	db %00000001		; $66 'f'
+; 	db %00000001		; $67 'g'
+; 	db %00000001		; $68 'h'
+; 	db %00000001		; $69 'i'
+; 	db %00000001		; $6a 'j'
+; 	db %00000001		; $6b 'k'
+; 	db %00000001		; $6c 'l'
+; 	db %00000001		; $6d 'm'
+; 	db %00000001		; $6e 'n'
+; 	db %00000001		; $6f 'o'
+
+; 	db %00000001		; $70 'p'
+; 	db %00000001		; $71 'q'
+; 	db %00000001		; $72 'r'
+; 	db %00000001		; $73 's'
+; 	db %00000001		; $74 't'
+; 	db %00000001		; $75 'u'
+; 	db %00000001		; $76 'v'
+; 	db %00000001		; $77 'w'
+; 	db %00000001		; $78 'x'
+; 	db %00000001		; $79 'y'
+; 	db %00000001		; $7a 'z'
+; 	db %00000001		; $7b '{'
+; 	db %00000001		; $7c '|'
+; 	db %00000001		; $7d '}'
+; 	db %00000001		; $7e '~'
+; 	db %00000000		; $7f     (^?)
+; character_width_table_end:

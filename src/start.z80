@@ -1,0 +1,330 @@
+include "hardware.inc"
+include "macros.inc"
+include "char.inc"
+
+export frame_count
+
+export on_button_down
+export on_button_up
+export on_button_held
+export on_button_repeat
+
+section "V-Blank interrupt", ROM0[$0040] ; max 8 bytes
+jp vblank
+
+section "Timer Overflow interrupt", ROM0[$0050] ; max 8 bytes
+reti
+;jp timer_interrupt
+
+section "Joypad interrupt", ROM0[$0060] ; max 8 bytes
+reti
+;jp timer_interrupt
+
+section "start", ROM0[$0100]
+start:
+	di
+	jp init
+
+rept $150 - $104
+	db 0 
+endr
+
+section "global data", ROMX, align[8] ; aligned for easy access of hex_map
+hex_map: 			db "0123456789ABCDEF"
+
+section "global variables", wramx
+frame_count:				ds 1
+
+section "init", ROMX
+init:
+	call wait_vblank ; screen can only be turned off while in vblank
+	
+	xor a
+	ld [rLCDC], a
+
+	; shut sound down
+	ld [rNR52], a
+
+	; speed switch routine
+	ld a, %00000001
+	ld [rKEY1], a
+	stop 
+
+; populate ram
+	
+	call init_screen_mem
+	call init_joypad_mem
+	call init_input_mem
+	call init_character_mem
+
+	xor a
+	ld [frame_count], a
+
+; end of ram population
+
+; init display registers
+; DMG
+	; background palette
+	; ld a, %11100100
+	; ld [rBGP], a
+
+	; object palettes
+	; obj palette 0 for black, obj palette 1 for white
+	; ld [rOBP0], a
+	; ld a, %00100111
+	; ld [rOBP1], a
+;
+
+; CGB
+	; background palette
+	ld a, BCPSF_AUTOINC
+	ld [rBCPS], a
+	
+	; color 0 BGP0
+	ld a, %11111111
+	ld [rBCPD], a
+	ld a, %1111111
+	ld [rBCPD], a
+	
+	; color 1 BGP0
+	ld a, %10110101
+	ld [rBCPD], a
+	ld a, %1010110
+	ld [rBCPD], a
+	
+	; color 2 BGP0
+	ld a, %01001010
+	ld [rBCPD], a
+	ld a, %0101001
+	ld [rBCPD], a
+	
+	; color 3 BGP0
+	ld a, %00000000
+	ld [rBCPD], a
+	ld a, %0000000
+	ld [rBCPD], a
+	
+	; object palettes
+	ld a, OCPSF_AUTOINC
+	ld [rOCPS], a
+
+	; color 0 OBP0
+	ld a, %11111111
+	ld [rOCPD], a
+	ld a, %1111111
+	ld [rOCPD], a
+
+	; color 1 OBP0
+	ld a, %10110101
+	ld [rOCPD], a
+	ld a, %1010110
+	ld [rOCPD], a
+
+	; color 2 OBP0
+	ld a, %01001010
+	ld [rOCPD], a
+	ld a, %0101001
+	ld [rOCPD], a
+
+	; color 3 OBP0
+	ld a, %00000000
+	ld [rOCPD], a
+	ld a, %0000000
+	ld [rOCPD], a
+;
+	; cursor
+	; first object oam
+	ld hl, CURSOR_OBJECT_PTR
+	; y
+	ld [hli], a
+	; x
+	ld [hli], a
+	; tile id
+	ld a, CURSOR_CHARACTER
+	ld [hli], a
+	; flags
+	xor a
+	ld [hl], a
+	;
+
+	xor a
+	
+	ld [rSCY], a
+	ld [rSCX], a
+
+	ld [rWY], a
+	ld a, $07 ; for some reason this needs to be 7 otherwise the backgrounds shifts by 7 pixels when window layer is enabled
+	ld [rWX], a
+
+	; turn screen on, display background and objects
+	ld a, LCDCF_ON | LCDCF_BG8000 | LCDCF_BGON | LCDCF_OBJON
+	ld [rLCDC], a
+
+	; xor a ; 
+	; ld a, $ff ; - 40 ; $f0
+	; ld [rTMA], a
+	; ld a, TACF_START | TACF_262KHZ ; TACF_4KHZ
+	; ld [rTAC], a
+	
+	; lurn ir receiver on and light off
+	;ld a, RPF_ENREAD
+	;ld [rRP], a
+
+	xor a
+	ld [rIF], a
+
+	ld a, IEF_VBLANK | IEF_HILO ; | IEF_TIMER
+	ld [rIE], a
+
+	ei
+	call _main
+
+.halting
+	halt
+	; nop ; assembler takes care of halt bug
+	jr .halting
+
+vblank:
+	PUSH_ALL
+	call read_joypad
+	call check_input
+
+	ld hl, frame_count
+	inc [hl]
+
+	ld a, [cursor_blink_next_frame]
+	cp [hl]
+	push af
+
+	; drawing
+	;call wait_vblank
+
+
+	ld hl, CURSOR_OBJECT_PTR
+	ld a, [cursor_y]
+	sla a
+	sla a
+	sla a
+	ld b, 16
+	add b
+	ld [hli], a
+
+	ld a, [cursor_x]
+	sla a
+	sla a
+	sla a
+	ld b, 8
+	add b
+	ld [hli], a
+
+	pop af
+	jr nz, .no_cursor_blink
+		add CURSOR_BLINK_RATE
+		ld [cursor_blink_next_frame], a
+
+		ld a, [hl]
+		xor CURSOR_CHARACTER
+		ld [hl], a
+	.no_cursor_blink
+
+	for Y, SCRN_Y_B
+		ld hl, _SCRN0 + SCRN_VX_B * Y
+		ld de, character_buffer + SCRN_X_B * Y
+		ld bc, SCRN_X_B
+		call vmemcpy
+	endr
+
+	;ld a, HIGH(SHADOW_OAM)
+	;call OAMDMA ; dma routine
+
+	POP_ALL
+	reti
+
+; CGB
+; TODO: TEST
+; value_on_screen
+;
+; input 
+; - a  : value
+; - hl : destination
+;
+; destroys af, bc, de, hl
+value_on_screen:
+	ld c, $0f
+	ld d, HIGH(hex_map)
+	ld b, a
+
+	swap a
+	and c
+	ld e, a
+	ld a, [de]
+	ld [hli], a
+
+	ld a, b
+	and c
+	ld e, a
+	ld a, [de]
+	ld [hl], a
+	ret
+; value_on_screen
+
+on_button_down:
+	call cursor_reset_blink
+
+	ret 
+
+on_button_up:
+	bit PADB_START, b
+	jr z, .no_button_start
+		ld sp, $fffe
+		jp start
+	.no_button_start
+	ret 
+
+on_button_held:
+	bit PADB_A, b
+	jr z, .no_button_a
+		push bc
+		ld a, "A"
+		call putchar
+		pop bc
+	.no_button_a
+	
+	bit PADB_B, b
+	jr z, .no_button_b
+		push bc
+		ld a, " "
+		call putchar
+		pop bc
+	.no_button_b
+
+	ret 
+
+on_button_repeat:
+	call cursor_reset_blink
+
+	bit PADB_LEFT, b
+	jr z, .no_button_left
+		ld hl, cursor_x
+		dec [hl]
+	.no_button_left
+	
+	bit PADB_RIGHT, b
+	jr z, .no_button_right
+		ld hl, cursor_x
+		inc [hl]
+	.no_button_right
+
+	bit PADB_UP, b
+	jr z, .no_button_up
+		ld hl, cursor_y
+		dec [hl]
+	.no_button_up
+	
+	bit PADB_DOWN, b
+	jr z, .no_button_down
+		ld hl, cursor_y
+		inc [hl]
+	.no_button_down
+
+	ret

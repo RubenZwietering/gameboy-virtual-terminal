@@ -1,0 +1,115 @@
+;--------------------------------------------------------
+; File Created by SDCC : free open source ISO C Compiler 
+; Version 4.4.0 #14620 (Linux)
+;--------------------------------------------------------
+	; MODULE main
+	; Generated using the rgbds tokens.
+
+;--------------------------------------------------------
+; Public variables in this module
+;--------------------------------------------------------
+	EXPORT _main
+	EXPORT _puts
+;--------------------------------------------------------
+; special function registers
+;--------------------------------------------------------
+;--------------------------------------------------------
+; ram data
+;--------------------------------------------------------
+	SECTION FRAGMENT "src/main.c_DATA",WRAMX
+;--------------------------------------------------------
+; ram data
+;--------------------------------------------------------
+	SECTION FRAGMENT "_INITIALIZED",ROM0
+;--------------------------------------------------------
+; absolute external ram data
+;--------------------------------------------------------
+	SECTION FRAGMENT "_DABS (ABS)",ROM0
+;--------------------------------------------------------
+; global & static initialisations
+;--------------------------------------------------------
+	SECTION FRAGMENT "_HOME",ROM0
+	SECTION FRAGMENT "_GSINIT",ROM0
+	SECTION FRAGMENT "_GSFINAL",ROM0
+	SECTION FRAGMENT "_GSINIT",ROM0
+;--------------------------------------------------------
+; Home
+;--------------------------------------------------------
+	SECTION FRAGMENT "src/main.c_HOME",ROM0
+	SECTION FRAGMENT "src/main.c_HOME",ROM0
+;--------------------------------------------------------
+; code
+;--------------------------------------------------------
+	SECTION FRAGMENT "src/main.c_CODE",ROMX
+;src/main.c:10: void main(void)
+;	---------------------------------
+; Function main
+; ---------------------------------
+_main::
+;src/main.c:20: puts("Line 7: Scroll\ntest");
+	ld	de, ___str_16
+	jp	_puts
+.l00101:
+;src/main.c:21: }
+	ret
+___str_16:
+	DB "Hello, world!"
+	DB $0A
+	DB "Line 2: Line feed"
+	DB $0A
+	DB "test"
+	DB $0A
+	DB "Not line 4: "
+	DB $0D
+	DB "Line 3: Carriage return test"
+	DB $0A
+	DB "Not"
+	DB $08
+	DB $08
+	DB $08
+	DB $08
+	DB $08
+	DB $08
+	DB "Line 4: Backspace test"
+	DB $0A
+	DB "Line 5:"
+	DB $09
+	DB "Tab tests"
+	DB $09
+	DB $09
+	DB "!"
+	DB $09
+	DB "1234567"
+	DB $09
+	DB "t"
+	DB $0A
+	DB "1234567"
+	DB $09
+	DB "1234567"
+	DB $09
+	DB "123"
+	DB $09
+	DB "test"
+	DB $0A
+	DB "1234567"
+	DB $09
+	DB "1234567"
+	DB $09
+	DB "1"
+	DB $09
+	DB $09
+	DB $09
+	DB $09
+	DB "test"
+	DB $0A
+	DB "Line 6: "
+	DB $0B
+	DB "Vertical tab test"
+	DB $0A
+	DB "Line 7: Scroll"
+	DB $0A
+	DB "test"
+	DB $00
+	SECTION FRAGMENT "src/main.c_CODE",ROMX
+	SECTION FRAGMENT "_INITIALIZER",ROM0
+	SECTION FRAGMENT "_CABS (ABS)",ROM0

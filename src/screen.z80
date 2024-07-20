@@ -1,0 +1,127 @@
+include "screen.inc"
+include "memory.inc"
+
+export init_screen_mem
+export wait_vblank
+export wait_vline
+
+section "shadow OAM", WRAM0, ALIGN[8] ; aligned for DMA tranfer
+shadow_oam: ds 40 * 4
+shadow_oam_end:
+
+section "tile data", ROMX
+tiles_sys:
+incbin "bin/sys.2bpp"
+tiles_sys_end:
+
+section "screen functions", ROMX
+
+; init_screen_mem
+; - note : VRAM has to be accessible
+;
+; destroys `af`, `bc`, `hl`
+init_screen_mem:
+	; load OAM DMA routine into HRAM
+	call copy_oam_dma_routine
+
+	; clear shadow OAM
+	xor a
+	ld hl, shadow_oam
+	ld bc, shadow_oam_end - shadow_oam
+	call memset
+
+	; xor a ; unnecessary
+	ld [rVBK], a
+
+	; xor a ; (OAMF_PAL0 | OAMF_BANK0) ; unnecessary
+	ld hl, _SCRN0
+	ld bc, _SCRN_BANK_SIZE
+	call memset
+
+	; ld a, $ff
+	; ld hl, _VRAM
+	; ld bc, _VRAM_BANK_SIZE
+	; call memset
+
+	ld hl, _VRAM
+	ld de, tiles_sys
+	ld bc, tiles_sys_end - tiles_sys
+	call memcpy
+
+	; ld hl, _VRAM + _VRAM_BANK_SIZE
+	; ld de, tiles_sys
+	; ld bc, tiles_sys_end - tiles_sys
+	; call memcpy
+
+	ld a, $ff
+	ld hl, _VRAM + _VRAM_BANK_SIZE
+	ld bc, _VRAM_BANK_SIZE
+	call memset
+
+	OAMDMA shadow_oam
+
+	ret
+; init_screen_mem
+
+; wait_vblank
+;
+; destroys `af`
+wait_vblank:
+	ld a, [rLY]
+	cp SCRN_Y
+	jr c, wait_vblank ; c (a < n) / nz (a != n) ?
+	ret
+; wait_vblank
+
+; wait_vline
+;
+; input
+; - `b`  : y
+;
+; destroys `af`
+wait_vline:
+	ld a, [rLY]
+	cp b
+	jr nz, wait_vline ; c (a < n) / nz (a != n) ?
+	ret
+; wait_vline
+
+section "OAM DMA routine", ROMX
+oam_dma_routine:
+	ld [rDMA], a ; DMA transfer
+
+	; wait for DMA transfer to end (160) microseconds
+	ld a, 40
+	.loop:
+		dec a
+	jr nz, .loop
+	ret
+oam_dma_routine_end:
+
+; possibly remove this and use memcpy instead?
+
+; copy_oam_dma_routine
+;
+; destroys `af`, `bc`, `hl`
+copy_oam_dma_routine:
+	ld hl, oam_dma_routine
+	ld b, oam_dma_routine_end - oam_dma_routine
+	ld c, LOW(oam_dma)
+	.copy
+		ld a, [hli]
+		ldh [c], a
+		inc c
+		dec b
+	jr nz, .copy
+	ret
+; copy_oam_dma_routine
+
+section "OAM DMA", HRAM
+; oam_dma : OAM DMA transfer routine
+;
+; input
+; - `a`  : high byte of the shadow OAM to copy to the real OAM
+;
+; destroys `af`
+oam_dma: ds oam_dma_routine_end - oam_dma_routine
+; oam_dma

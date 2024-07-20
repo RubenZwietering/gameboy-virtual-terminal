@@ -1,0 +1,85 @@
+include "hardware.inc"
+
+export joypad_state
+export joypad_state_old
+
+export init_joypad_mem
+export read_joypad
+
+section "joypad variables", WRAMX
+joypad_state: 		ds 1
+joypad_state_old: 	ds 1
+
+section "joypad functions", ROMX
+
+; init_joypad_mem
+;
+; destroys af
+init_joypad_mem:
+    xor a
+	; debugger says this is uninitialized...
+	ld [joypad_state], a
+	; debugger says this is uninitialized...
+	ld [joypad_state_old], a
+    
+    ret
+; init_joypad_mem
+
+; read_joypad
+read_joypad:
+    ; ; P14 buttons
+    ; ld hl, rP1
+    ; ld a, P1F_4
+    ; ld [hl], a
+    ; ld a, [hl]
+    ; ld a, [hl]
+	; cpl
+	; and $0f
+	; ld b, a
+	
+    ; ; P15 buttons
+    ; ld hl, rP1
+    ; ld a, P1F_5
+    ; ld [hl], a
+    ; ld a, [hl]
+    ; ld a, [hl]
+    ; ld a, [hl]
+    ; ld a, [hl]
+    ; ld a, [hl]
+    ; ld a, [hl]
+	; cpl
+	; and $0f
+	; swap a
+	; or b
+
+    ld hl, rP1
+    ld a, P1F_5
+    ld [hl], a
+	; preload p14 button value to waste time for bounce
+    ld b, P1F_4
+    ld a, [hl]
+
+    ld [hl], b
+	; do logic to waste time for bounce
+	and $0f
+	swap a
+	ld b, a
+    ld a, [hl]
+    ld a, [hl]
+    ld a, [hl]
+	and $0f
+
+	or b
+	cpl
+	
+    ; reset
+    ld [hl], P1F_4 | P1F_5
+
+    ld hl, joypad_state
+    ld b, [hl]
+    ld [hl], a
+    ld hl, joypad_state_old
+    ld [hl], b
+
+    ret
+; read_joypad

@@ -1,0 +1,163 @@
+include "memory.inc"
+
+export memcpy
+export memset
+export memxor
+export vmemcpy
+export vmemset
+export vmemxor
+
+section "memory functions", ROMX
+
+; memcpy
+;
+; input
+; - `hl` : destination
+; - `de` : source
+; - `bc` : size
+;
+; destroys `af`, `de`, `bc`, `hl`
+memcpy:
+	inc b
+	inc c
+	jr .skip
+
+	.loop
+		ld a, [de]
+		ld [hli], a
+		inc de
+		.skip
+		dec c
+	jr nz, .loop
+		dec b
+	jr nz, .loop
+	ret
+; memcpy
+
+; memset
+;
+; input
+; - `a`  : value
+; - `hl` : destination
+; - `bc` : size
+;
+; destroys `f`, `bc`, `hl`
+memset:
+	inc b
+	inc c
+	jr .skip
+
+	.loop
+		ld [hli], a
+		.skip
+		dec c
+	jr nz, .loop
+		dec b
+	jr nz, .loop
+	ret
+; memset
+
+; memxor
+;
+; input
+; - `hl` : destination
+; - `bc` : size
+;
+; destroys `af`, `bc`, `hl`
+memxor:
+	inc b
+	inc c
+	jr .skip
+
+	.loop
+		ld a, [hl]
+		cpl
+		ld [hli], a
+		.skip
+		dec c
+	jr nz, .loop
+		dec b
+	jr nz, .loop
+	ret
+; memxor
+
+
+; vmemcpy
+;
+; input
+; - `hl` : destination
+; - `de` : source
+; - `bc` : size
+;
+; destroys `af`, `de`, `bc`, `hl`
+vmemcpy:
+	inc b
+	inc c
+	jr .skip
+
+	.loop
+		WAIT_BLANK
+
+		ld a, [de]
+		ld [hli], a
+		inc de
+		.skip
+		dec c
+	jr nz, .loop
+		dec b
+	jr nz, .loop
+	ret
+; vmemcpy
+
+; vmemset
+;
+; input
+; - `a`  : value
+; - `hl` : destination
+; - `bc` : size
+;
+; destroys `f`, `bc`, `e`, `hl`
+vmemset:
+	inc b
+	inc c
+	ld e, a
+	jr .skip
+
+	.loop
+		WAIT_BLANK
+
+		ld a, e
+		ld [hli], a
+		.skip
+		dec c
+	jr nz, .loop
+		dec b
+	jr nz, .loop
+	ret
+; vmemset
+
+; vmemxor
+;
+; input
+; - `hl` : destination
+; - `bc` : size
+;
+; destroys `af`, `bc`, `hl`
+vmemxor:
+	inc b
+	inc c
+	jr .skip
+
+	.loop
+		WAIT_BLANK
+
+		ld a, [hl]
+		cpl
+		ld [hli], a
+		.skip
+		dec c
+	jr nz, .loop
+		dec b
+	jr nz, .loop
+	ret
+; vmemxor
