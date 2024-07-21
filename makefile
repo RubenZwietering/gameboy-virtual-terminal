@@ -18,7 +18,7 @@ CFLAGS:=--std=c23 -msm83 --asm=rgbds -S
 LINK:=rgblink
 LFLAGS:=-p 0xff
 FIX:=rgbfix
-FFLAGS:=-CvO -p 0
+FFLAGS:=-cvO -p 0
 GFX:=rgbgfx
 GFLAGS:=
 EMU:=sameboy
@@ -45,7 +45,7 @@ OBJS:=$(patsubst %.z80,$(ODIR)/%.o,$(ASRCS)) $(patsubst %,$(ODIR)/%.o,$(CSRCS))
 DEPS:=$(patsubst $(ODIR)/%.o,$(DDIR)/%.d,$(OBJS))
 GFXS:=$(patsubst %.png,$(BDIR)/%.2bpp,$(GSRCS))
 
-OUT:=$(BDIR)/$(PROG).gbc
+OUT:=$(BDIR)/$(PROG).gb
 SYM:=$(BDIR)/$(PROG).sym
 
 all: $(ODIR) $(DDIR) $(BDIR) $(OUT)
@@ -77,6 +77,12 @@ $(ODIR) $(DDIR) $(BDIR):
 
 run: all
 	$(EMU) $(EFLAGS) $(OUT)
+
+run_dmg: all
+	$(EMU) $(EFLAGS) --model dmg $(OUT)
+
+run_cgb: all
+	$(EMU) $(EFLAGS) --model cgb $(OUT)
 
 flash: all
 	flashgbx --mode dmg --action flash-rom $(OUT)
