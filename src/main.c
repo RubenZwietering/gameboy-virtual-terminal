@@ -1,5 +1,7 @@
 // #include <stdio.h>
 
+extern volatile unsigned char hardware;
+
 extern void gotoxy(unsigned char, unsigned char);
 extern char putchar(char);
 extern char puts(const char*);
@@ -18,4 +20,20 @@ void main(void)
 	puts("1234567\t1234567\t1\t\t\t\ttest");
 	puts("Line 6: \vVertical tab test");
 	puts("Line 7: Scroll\ntest");
+
+	switch (hardware)
+	{
+		case 0:
+			puts("Line 8: DMG system");
+			break;
+		case 1:
+			puts("Line 8: CGB system");
+			break;
+		case 2:
+			puts("Line 8: AGB system");
+			break;
+		default:
+			puts("Line 8: Unknown system");
+			break;
+	}
 }

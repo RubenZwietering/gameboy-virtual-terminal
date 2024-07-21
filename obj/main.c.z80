@@ -41,18 +41,67 @@
 ; code
 ;--------------------------------------------------------
 	SECTION FRAGMENT "src/main.c_CODE",ROMX
-;src/main.c:10: void main(void)
+;src/main.c:12: void main(void)
 ;	---------------------------------
 ; Function main
 ; ---------------------------------
 _main::
-;src/main.c:20: puts("Line 7: Scroll\ntest");
-	ld	de, ___str_16
-	jp	_puts
+;src/main.c:22: puts("Line 7: Scroll\ntest");
+	ld	de, ___str_20
+	call	_puts
+;src/main.c:24: switch (hardware)
+	ld	hl, _hardware
+	ld	a, [hl]
+	or	a, a
+	jr	Z, .l00101
+.l00129:
+	cp	a, $01
+	jr	Z, .l00102
+.l00130:
+	sub	a, $02
+	jr	Z, .l00103
+.l00131:
+	jr	.l00104
+;src/main.c:26: case 0:
 .l00101:
-;src/main.c:21: }
+;src/main.c:27: puts("Line 8: DMG system");
+;src/main.c:28: break;
+	ld	de, ___str_9
+	jp	_puts
+;src/main.c:29: case 1:
+.l00102:
+;src/main.c:30: puts("Line 8: CGB system");
+;src/main.c:31: break;
+	ld	de, ___str_10
+	jp	_puts
+;src/main.c:32: case 2:
+.l00103:
+;src/main.c:33: puts("Line 8: AGB system");
+;src/main.c:34: break;
+	ld	de, ___str_11
+	jp	_puts
+;src/main.c:35: default:
+.l00104:
+;src/main.c:36: puts("Line 8: Unknown system");
+	ld	de, ___str_12
+	jp	_puts
+;src/main.c:38: }
+.l00106:
+;src/main.c:39: }
 	ret
-___str_16:
+___str_9:
+	DB "Line 8: DMG system"
+	DB $00
+___str_10:
+	DB "Line 8: CGB system"
+	DB $00
+___str_11:
+	DB "Line 8: AGB system"
+	DB $00
+___str_12:
+	DB "Line 8: Unknown system"
+	DB $00
+___str_20:
 	DB "Hello, world!"
 	DB $0A
 	DB "Line 2: Line feed"

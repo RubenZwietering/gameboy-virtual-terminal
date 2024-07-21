@@ -2,6 +2,7 @@ include "hardware.inc"
 include "macros.inc"
 include "char.inc"
 
+export _hardware
 export frame_count
 
 export on_button_down
@@ -32,7 +33,7 @@ section "global data", ROMX, align[8] ; aligned for easy access of hex_map
 hex_map: 			db "0123456789ABCDEF"
 
 section "global variables", wramx
-hardware:					ds 1 ; 0 = dmg, 1 = cgb, 2 = gba
+_hardware:					ds 1 ; 0 = dmg, 1 = cgb, 2 = gba
 frame_count:				ds 1
 
 section "init", ROMX
@@ -53,7 +54,7 @@ init:
 	ld a, 1 ; cgb
 
 	.hardware_detection_end
-	ld [hardware], a
+	ld [_hardware], a
 
 soft_init:
 	call wait_vblank ; screen can only be turned off while in vblank
@@ -64,7 +65,7 @@ soft_init:
 	; shut sound down
 	ld [rNR52], a
 
-	ld a, [hardware]
+	ld a, [_hardware]
 	or a
 	jr z, .dmg_speed
 		; speed switch routine
@@ -86,7 +87,7 @@ soft_init:
 ; end of ram population
 
 ; init display registers
-	ld a, [hardware]
+	ld a, [_hardware]
 	or a
 	jr nz, .cgb_compatible_palette
 		; background palette
