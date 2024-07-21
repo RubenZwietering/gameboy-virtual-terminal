@@ -10,16 +10,20 @@ export on_button_up
 export on_button_held
 export on_button_repeat
 
-section "V-Blank interrupt", ROM0[$0040] ; max 8 bytes
+section "V-Blank interrupt", ROM0[INT_HANDLER_VBLANK] ; max 8 bytes
 jp vblank
 
-section "Timer Overflow interrupt", ROM0[$0050] ; max 8 bytes
+section "STAT interrupt", ROM0[INT_HANDLER_STAT] ; max 8 bytes
 reti
-;jp timer_interrupt
 
-section "Joypad interrupt", ROM0[$0060] ; max 8 bytes
+section "Timer Overflow interrupt", ROM0[INT_HANDLER_TIMER] ; max 8 bytes
 reti
-;jp timer_interrupt
+
+section "Serial interrupt", ROM0[INT_HANDLER_SERIAL] ; max 8 bytes
+jp serial_interrupt
+
+section "Joypad interrupt", ROM0[INT_HANDLER_JOYPAD] ; max 8 bytes
+reti
 
 section "start", ROM0[$0100]
 	di
@@ -74,7 +78,7 @@ soft_init:
 		stop
 	.dmg_speed
 
-; populate ram
+	; populate ram
 	
 	call init_screen_mem
 	call init_joypad_mem
@@ -84,9 +88,9 @@ soft_init:
 	xor a
 	ld [frame_count], a
 
-; end of ram population
+	; end of ram population
 
-; init display registers
+	; init display registers
 	ld a, [_hardware]
 	or a
 	jr nz, .cgb_compatible_palette
@@ -188,30 +192,24 @@ soft_init:
 	ld a, LCDCF_ON | LCDCF_BG8000 | LCDCF_BGON | LCDCF_OBJON
 	ld [rLCDC], a
 
-	; xor a ; 
-	; ld a, $ff ; - 40 ; $f0
-	; ld [rTMA], a
-	; ld a, TACF_START | TACF_262KHZ ; TACF_4KHZ
-	; ld [rTAC], a
-	
-	; lurn ir receiver on and light off
-	;ld a, RPF_ENREAD
-	;ld [rRP], a
-
 	xor a
 	ld [rIF], a
 
-	ld a, IEF_VBLANK | IEF_HILO ; | IEF_TIMER
+	ld a, IEF_VBLANK | IEF_SERIAL
 	ld [rIE], a
+
+	ld a, SCF_START
+	ld [rSC], a
 
 	ei
 	call _main
 
-.halting
-	halt
-	; nop ; assembler takes care of halt bug
+	.halting
+		halt
+		; nop ; assembler takes care of halt bug
 	jr .halting
 
+; vblank
 vblank:
 	PUSH_ALL
 	call read_joypad
@@ -267,16 +265,26 @@ vblank:
 
 	POP_ALL
 	reti
+; vblank
 
-; CGB
+; serial_interrupt
+serial_interrupt:
+	PUSH_ALL
+
+
+
+	POP_ALL
+	reti
+; serial_interrupt
+
 ; TODO: TEST
 ; value_on_screen
 ;
 ; input 
-; - a  : value
-; - hl : destination
+; - `a` : value
+; - `hl` : destination
 ;
-; destroys af, bc, de, hl
+; destroys `af`, `bc`, `de`, `hl`
 value_on_screen:
 	ld c, $0f
 	ld d, HIGH(hex_map)
@@ -296,11 +304,14 @@ value_on_screen:
 	ret
 ; value_on_screen
 
+; on_button_down
 on_button_down:
 	call cursor_reset_blink
 
 	ret 
+; on_button_down
 
+; on_button_up
 on_button_up:
 	bit PADB_START, b
 	jr z, .no_button_start
@@ -309,7 +320,9 @@ on_button_up:
 		jp soft_init
 	.no_button_start
 	ret 
+; on_button_up
 
+; on_button_held
 on_button_held:
 	bit PADB_A, b
 	jr z, .no_button_a
@@ -328,7 +341,9 @@ on_button_held:
 	.no_button_b
 
 	ret 
+; on_button_held
 
+; on_button_repeat
 on_button_repeat:
 	call cursor_reset_blink
 
@@ -357,3 +372,4 @@ on_button_repeat:
 	.no_button_down
 
 	ret
+; on_button_repeat
