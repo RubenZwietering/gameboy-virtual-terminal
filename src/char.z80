@@ -28,6 +28,9 @@ character_buffer_end:
 def CHARACTER_BUFFER_SIZE equ character_buffer_end - character_buffer
 
 section "character functions", ROMX
+; init_character_mem
+; 
+; destroys `af`, `bc`, `hl`
 init_character_mem:
 	xor a
 	ld [cursor_x], a
@@ -41,7 +44,7 @@ init_character_mem:
 	ld bc, CHARACTER_BUFFER_SIZE
 	call memset
 	ret
-
+; init_character_mem
 
 ; cursor_reset_blink
 ;
@@ -156,9 +159,6 @@ scroll_buffer:
 ; scroll_buffer
 
 ; cursor_forward
-;
-; input:
-; - `a` : character
 ; 
 ; destoys `af`
 cursor_forward:
@@ -192,10 +192,10 @@ cursor_forward:
 ; unsigned char cursor_up(unsigned char);
 ; 
 ; input:
-; - `a` : amount cursor to move
+; - `a` : number of lines to move
 ; 
 ; returns:
-; - `a` : amount cursor moved
+; - `a` : number of lines moved
 ; 
 ; destroys
 _cursor_up:
@@ -207,8 +207,14 @@ _cursor_up:
 ; 
 ; c function signiature:
 ; char putchar(char);
+;
+; input:
+; - `a` : character
+;
+; returns:
+; - `a` : TODO: character written
 ; 
-; destroys `bc`, `de`, `hl`
+; destroys `af`, `bc`, `de`, `hl`
 _putchar:
 	call putchar
 	ret
@@ -216,8 +222,11 @@ _putchar:
 
 ; putchar
 ;
-; input 
+; input:
 ; - `a` : character
+;
+; returns:
+; - `a` : TODO: character written
 ;
 ; destroys `af`, `bc`, `de`, `hl`
 putchar:
@@ -348,6 +357,9 @@ putchar:
 ; input:
 ; - `de` : string ptr
 ;
+; returns:
+; - `a` : TODO: number of characters written
+;
 ; destroys `af`, `bc`, `de`, `hl`
 _puts:
 	ld h, d
@@ -360,7 +372,10 @@ _puts:
 ; input:
 ; - `hl` : string ptr
 ;
-; destroys `af`, `de`, `hl`
+; returns:
+; - `a` : TODO: number of characters written
+;
+; destroys `af`, `bc`, `de`, `hl`
 puts:
 	ld a, [hli]
 	or a
