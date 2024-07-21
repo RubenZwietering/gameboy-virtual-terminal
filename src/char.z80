@@ -73,6 +73,7 @@ _gotoxy:
 	ld [cursor_x], a
 	ld a, e
 	ld [cursor_y], a 
+	ret
 ; _gotoxy
 
 
