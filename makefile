@@ -25,6 +25,7 @@ EMU?=sameboy
 EFLAGS?=
 ESUFFIX?=
 HW?=
+CABLE?=
 
 ifeq ($(HW),gbc)
 	HW:=cgb
@@ -36,11 +37,18 @@ ifeq ($(EMU),sameboy)
 	else ifeq ($(HW),cgb)
 		EFLAGS:=$(EFLAGS) --model cgb
 	endif
+	ifneq ($(CABLE),)
+$(warning Warning: Sameboy SDL version does not support link cable emulation.)
+	endif
 else ifeq ($(EMU),bgb)
 	ifeq ($(HW),dmg)
 		EFLAGS:=$(EFLAGS) --setting SystemMode=0
 	else ifeq ($(HW),cgb)
 		EFLAGS:=$(EFLAGS) --setting SystemMode=1
+	endif
+	ifneq ($(CABLE),) # default for bgb 127.0.0.1:8765 or 127.0.0.1
+		# or --connect
+		EFLAGS:=$(EFLAGS) --listen $(CABLE)
 	endif
 	ESUFFIX:=2> /dev/null
 else ifeq ($(EMU),emulicious)
@@ -48,6 +56,9 @@ else ifeq ($(EMU),emulicious)
 		EFLAGS:=$(EFLAGS) -set System=GAME_BOY
 	else ifeq ($(HW),cgb)
 		EFLAGS:=$(EFLAGS) -set System=GAME_BOY_COLOR
+	endif
+	ifneq ($(CABLE),) # default for emulicious 127.0.0.1:5887 or 127.0.0.1
+		EFLAGS:=$(EFLAGS) -link $(wordlist 1,3,$(subst :, -linkport ,$(CABLE)))
 	endif
 endif
 
