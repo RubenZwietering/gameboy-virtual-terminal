@@ -21,8 +21,35 @@ FIX:=rgbfix
 FFLAGS:=-cvO -p 0
 GFX:=rgbgfx
 GFLAGS:=
-EMU:=sameboy
-EFLAGS:=
+EMU?=sameboy
+EFLAGS?=
+ESUFFIX?=
+HW?=
+
+ifeq ($(HW),gbc)
+	HW:=cgb
+endif
+
+ifeq ($(EMU),sameboy)
+	ifeq ($(HW),dmg)
+		EFLAGS:=$(EFLAGS) --model dmg
+	else ifeq ($(HW),cgb)
+		EFLAGS:=$(EFLAGS) --model cgb
+	endif
+else ifeq ($(EMU),bgb)
+	ifeq ($(HW),dmg)
+		EFLAGS:=$(EFLAGS) --setting SystemMode=0
+	else ifeq ($(HW),cgb)
+		EFLAGS:=$(EFLAGS) --setting SystemMode=1
+	endif
+	ESUFFIX:=2> /dev/null
+else ifeq ($(EMU),emulicious)
+	ifeq ($(HW),dmg)
+		EFLAGS:=$(EFLAGS) -set System=GAME_BOY
+	else ifeq ($(HW),cgb)
+		EFLAGS:=$(EFLAGS) -set System=GAME_BOY_COLOR
+	endif
+endif
 
 ASRCS:=							\
 	char.z80					\
@@ -76,13 +103,7 @@ $(ODIR) $(DDIR) $(BDIR):
 .PHONY: all run flash clean
 
 run: all
-	$(EMU) $(EFLAGS) $(OUT)
-
-run_dmg: all
-	$(EMU) $(EFLAGS) --model dmg $(OUT)
-
-run_cgb: all
-	$(EMU) $(EFLAGS) --model cgb $(OUT)
+	$(EMU) $(EFLAGS) $(OUT) $(ESUFFIX)
 
 flash: all
 	flashgbx --mode dmg --action flash-rom $(OUT)
