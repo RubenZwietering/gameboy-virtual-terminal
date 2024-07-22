@@ -1,0 +1,201 @@
+; https://en.wikipedia.org/wiki/Double_dabble
+
+export bcd_a_bc
+export bcd_hl_ebc
+export _bcd
+
+section "bcd conversion functions", ROMX
+
+; ADD_3_IF_BIGGER_THAN_4
+; 
+; destroys `af`
+macro ADD_3_IF_BIGGER_THAN_4
+	ld a, 4
+	cp \1 ; \1 >= 5
+	jr nc, .smaller_than_5\@
+		; add 3
+		dec a
+		add \1
+		ld \1, a
+	.smaller_than_5\@
+endm
+; ADD_3_IF_BIGGER_THAN_4
+
+
+; ADD_3_IF_BIGGER_THAN_4_LOW
+; 
+; destroys `af`
+macro ADD_3_IF_BIGGER_THAN_4_LOW
+	ld a, $4f
+	swap \1
+	cp \1 ; \1 >= 5
+	jr nc, .smaller_than_5_low\@
+		swap \1
+
+		; add 3
+		ld a, 3
+		add \1
+		ld \1, a
+
+		jr .no_swap\@
+	.smaller_than_5_low\@
+
+	swap \1
+
+	.no_swap\@
+endm
+; ADD_3_IF_BIGGER_THAN_4_LOW
+
+
+; ADD_3_IF_BIGGER_THAN_4_HIGH
+; 
+; destroys `af`
+macro ADD_3_IF_BIGGER_THAN_4_HIGH
+	ld a, $4f
+	cp \1 ; \1 >= $50
+	jr nc, .smaller_than_5_high\@
+		; add $30
+		ld a, $30
+		add \1
+		ld \1, a
+	.smaller_than_5_high\@
+endm
+; ADD_3_IF_BIGGER_THAN_4_HIGH
+
+
+; bcd_a_bc
+;
+; input:
+; - `a` : 8 bit binary number
+;
+; returns:
+; - `bc` : 12 bit binary-coded decimal
+;
+; destoys `a`, `bc`, `l`
+bcd_a_bc:
+	ld bc, 0
+
+	add a ; sla a
+	rl c
+
+	add a ; sla a
+	rl c
+
+	add a ; sla a
+	rl c
+
+	ld l, a
+	ADD_3_IF_BIGGER_THAN_4 c
+	ld a, l
+
+	add a ; sla a
+	rl c
+
+	ld l, a
+	ADD_3_IF_BIGGER_THAN_4_LOW c
+	ld a, l
+
+	add a ; sla a
+	rl c
+
+	ld l, a
+	ADD_3_IF_BIGGER_THAN_4_LOW c
+	ld a, l
+
+	add a ; sla a
+	rl c
+
+	ld l, a
+	ADD_3_IF_BIGGER_THAN_4_LOW c
+	ADD_3_IF_BIGGER_THAN_4_HIGH c
+	ld a, l
+
+	add a ; sla a
+	rl c
+	rl b
+	
+	ld l, a
+	ADD_3_IF_BIGGER_THAN_4_LOW c
+	ADD_3_IF_BIGGER_THAN_4_HIGH c
+	ADD_3_IF_BIGGER_THAN_4 b
+	ld a, l
+
+	add a ; sla a
+	rl c
+	rl b
+
+	ret
+; bcd_a_bc
+
+
+; bcd_hl_ebc
+; 
+; input:
+; - `hl` : 16 bit binary number
+;
+; returns:
+; - `ebc` : 24 bit binary-coded decimal
+;
+; destoys `af`, `bc`, `de`, `hl`
+bcd_hl_ebc:
+	ld bc, 0
+	ld e, c
+
+	sla l
+	rl h
+	rl c
+	
+	ld a, 15
+	.loop
+
+	ld d, a
+	ADD_3_IF_BIGGER_THAN_4_LOW c
+	ADD_3_IF_BIGGER_THAN_4_HIGH c
+	ADD_3_IF_BIGGER_THAN_4_LOW b
+	ADD_3_IF_BIGGER_THAN_4_HIGH b
+	ADD_3_IF_BIGGER_THAN_4_LOW e
+	ADD_3_IF_BIGGER_THAN_4_HIGH e
+	ld a, d
+
+	sla l
+	rl h
+	rl c
+	rl b
+	rl e
+
+	dec a
+	jr nz, .loop
+
+	ret
+; bcd_hl_ebc
+
+
+; _bcd
+; 
+; c function signiature:
+; unsigned long bcd(unsigned int);
+; 
+; input:
+; - `de` : 16 bit binary number
+;
+; returns:
+; - `debc` : 32 bit binary-coded decimal
+; 
+; destoys `af`, `bc`, `de`, `hl`
+_bcd:
+	ld a, d
+	or a
+	jr nz, .16_bit
+		ld a, e
+		ld de, 0
+		jp bcd_a_bc
+	.16_bit
+
+	ld h, d
+	ld l, e
+
+	call bcd_hl_ebc
+
+	ld d, 0
+	ret
+; _bcd
