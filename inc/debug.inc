@@ -1,6 +1,10 @@
 if !def(DEBUG_INC)
 def DEBUG_INC equ 1
 
+macro BREAKPOINT
+	ld b, b
+endm
+
 macro DPUTS
 	ld d, d
 	jr .no_debug_puts\@
