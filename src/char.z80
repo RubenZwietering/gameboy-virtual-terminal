@@ -1,6 +1,8 @@
 include "hardware.inc"
 include "screen.inc"
 include "char.inc"
+include "debug.inc"
+include "macros.inc"
 
 export cursor_x
 export cursor_y
@@ -16,6 +18,12 @@ export _putchar
 export putchar
 export _puts
 export puts
+export _printb
+export printb
+export _prints
+export prints
+export _vprintf
+export _printf
 
 section "character variables", WRAMX
 cursor_x: 					ds 1
@@ -45,6 +53,7 @@ init_character_mem:
 	call memset
 	ret
 ; init_character_mem
+
 
 ; cursor_reset_blink
 ;
@@ -159,6 +168,7 @@ scroll_buffer:
 	jp memset
 ; scroll_buffer
 
+
 ; cursor_forward
 ; 
 ; destoys `af`
@@ -184,6 +194,7 @@ cursor_forward:
 	jp scroll_buffer_once
 ; cursor_forward
 
+
 ; _cursor_up
 ;
 ; ANSI control sequence:
@@ -204,6 +215,7 @@ _cursor_up:
 	ret
 ; _cursor_up
 
+
 ; _putchar
 ; 
 ; c function signiature:
@@ -217,9 +229,7 @@ _cursor_up:
 ; 
 ; destroys `af`, `bc`, `de`, `hl`
 _putchar:
-	call putchar
-	ret
-; _putchar
+	; fallthrough
 
 ; putchar
 ;
@@ -349,6 +359,8 @@ putchar:
 
 	ret
 ; putchar
+; _putchar
+
 
 ; _puts
 ;
@@ -363,10 +375,8 @@ putchar:
 ;
 ; destroys `af`, `bc`, `de`, `hl`
 _puts:
-	ld h, d
-	ld l, e
-	jp puts
-; _puts
+	LD_R16_R16 hl, de
+	; fallthrough
 
 ; puts
 ;
@@ -378,20 +388,440 @@ _puts:
 ;
 ; destroys `af`, `bc`, `de`, `hl`
 puts:
-	ld a, [hli]
-	or a
-	jr z, .exit
-
-	push hl
-	call putchar
-	pop hl
-	jr puts
-
-	.exit
+	call prints
 
 	ld a, "\n"
 	jp putchar
 ; puts
+; _puts
+
+
+; _printb
+; 
+; description:
+; print a byte
+; 
+; c function signiature:
+; int printb(unsigned char);
+;
+; input:
+; - `a` : value
+;
+; returns:
+; - `bc` : number of characters written
+;
+; destroys `af`, `bc`, `de`, `hl`
+_printb:
+	; fallthrough
+
+; printb
+;
+; input:
+; - `a` : value
+;
+; returns:
+; - `bc` : number of characters written
+;
+; destroys `af`, `bc`, `de`, `hl`
+printb:
+	ld c, $0f
+	ld h, HIGH(hex_map)
+	ld b, a
+
+	and c
+	ld l, a
+	push hl
+
+	ld a, b
+	swap a
+	and c
+	ld l, a
+	ld a, [hl]
+
+	call putchar
+
+	pop hl
+	ld a, [hl]
+
+	call putchar
+
+	ld bc, 2
+	ret
+; printb
+; _printb
+
+; print_non_zero_nibbles
+; 
+; description:
+; print only lower nibble if upper nibble is zero,
+; assumes byte is not 0
+;
+; input:
+; - `a` : value
+;
+; returns:
+; - `bc` : number of characters written
+;
+; destroys `af`, `bc`, `de`, `hl`
+print_non_zero_nibbles:
+	ld c, $0f
+	ld h, HIGH(hex_map)
+	ld b, a
+
+	and c
+	ld l, a
+	push hl
+
+	ld a, b
+	swap a
+	and c
+	ld l, a
+	ld a, [hl]
+
+	call nz, putchar
+
+	pop hl
+	ld a, [hl]
+
+	call putchar
+
+	; TODO: return correct number of characters written
+	ld bc, 1
+	ret
+; print_non_zero_nibbles
+
+; _printhex
+; 
+; description:
+; print a hexadecimal integer,
+; zero nibbles are ignored unless it is the lowest one
+;
+; c function signiature:
+; int printhex(unsigned int);
+;
+; input:
+; - `de` : value
+;
+; returns:
+; - `bc` : number of characters written
+;
+; destroys `af`, `bc`, `de`, `hl`
+_printhex:
+	; fallthrough
+
+; printhex
+;
+; input:
+; - `de` : value
+;
+; returns:
+; - `bc` : number of characters written
+;
+; destroys `af`, `bc`, `de`, `hl`
+printhex:
+	ld a, d
+	or a
+	jr z, .ignore_upper_bits
+		push de
+		call print_non_zero_nibbles
+		pop de
+
+		ld a, e
+		call printb
+
+		; TODO: return correct number of characters written
+		ld bc, 3 ; or 4
+		ret
+	.ignore_upper_bits
+
+	ld a, e
+	call print_non_zero_nibbles
+
+	; TODO: return correct number of characters written
+	ld bc, 1 ; or 2
+	ret
+; printhex
+; _printhex
+
+; _printhexl
+; 
+; description:
+; print a hexadecimal long integer,
+; zero nibbles are ignored unless it is the lowest one
+;
+; c function signiature:
+; int printhexl(unsigned long);
+;
+; input:
+; - `debc` : value
+;
+; returns:
+; - `bc` : number of characters written
+;
+; destroys `af`, `bc`, `de`, `hl`
+_printhexl:
+	; fallthrough
+
+; printhexl
+;
+; input:
+; - `debc` : value
+;
+; returns:
+; - `bc` : number of characters written
+;
+; destroys `af`, `bc`, `de`, `hl`
+printhexl:
+	ld a, d
+	or e
+	jr z, .ignore_upper_bits
+		push bc
+		call printhex
+		pop de
+
+		call printhex
+
+		; TODO: return correct number of characters written
+		ld bc, 5 ; to 8
+		ret
+	.ignore_upper_bits
+
+	ld d, b
+	ld e, c
+	jp printhex
+; printhexl
+; _printhexl
+
+
+; _prints
+;
+; c function signiature:
+; int prints(const char*);
+;
+; input:
+; - `de` : string ptr
+;
+; returns:
+; - `bc` : TODO: number of characters written
+;
+; destroys `af`, `bc`, `de`, `hl`
+_prints:
+	LD_R16_R16 hl, de
+	; fallthrough
+
+; prints
+;
+; input:
+; - `hl` : string ptr
+;
+; returns:
+; - `bc` : TODO: number of characters written
+;
+; destroys `af`, `bc`, `de`, `hl`
+prints:
+	ld a, [hli]
+	or a
+	ret z
+
+	push hl
+	call putchar
+	pop hl
+	jr prints
+; prints
+; _prints
+
+
+; _vprintf
+;
+; c function signiature:
+; int printf(const char*, va_list);
+;
+; input:
+; - `de` : fmt string ptr
+; - `bc` : variable arguments list ptr
+;
+; returns:
+; - `bc` : TODO: number of characters written
+;
+; destroys `af`, `bc`, `de`, `hl`
+_vprintf:
+	ld h, d
+	ld l, e
+
+	.loop
+	ld a, [hli]
+
+	or a
+	ret z ; , .exit
+	
+	cp "%"
+	jr z, .fmt_specifier
+
+	push hl
+	push bc
+	call putchar
+	pop bc
+	pop hl
+	jr .loop
+	
+	.fmt_specifier
+	ld a, [hli]
+
+	or a
+	ret z ; , .exit
+
+	cp "0"
+	jr z, .fmt_specifier ; 0 Padding is not supported, ignore
+
+	sub "1"
+	cp 9
+	jr c, .fmt_specifier ; Width Specifier is not supported, ignore 1 digit worth
+	add "1"
+
+	cp "s"
+	jr nz, .not_s
+		push hl
+
+		ld a, [bc]
+		ld l, a
+		inc bc
+		ld a, [bc]
+		ld h, a
+		inc bc
+		
+		push bc
+		call prints
+		pop bc
+
+		pop hl
+		jr .loop
+	.not_s
+
+	cp "x"
+	jr nz, .not_x
+		push hl
+
+		ld a, [bc]
+		ld e, a
+		inc bc
+		ld a, [bc]
+		ld d, a
+		inc bc
+
+		push bc
+
+		call printhex
+
+		pop bc
+
+		pop hl
+		jr .loop
+	.not_x
+	
+	cp "c"
+	jr nz, .not_c
+		push hl
+		
+		ld a, [bc]
+		inc bc
+		inc bc
+		
+		push bc
+		call putchar
+		pop bc
+
+		pop hl
+		jr .loop 
+	.not_c
+
+	cp "u"
+	jr nz, .not_u
+		push hl
+
+		ld a, [bc]
+		ld e, a
+		inc bc
+		ld a, [bc]
+		ld d, a
+		inc bc
+		
+		push bc
+
+		call _bcd
+
+		call printhexl
+
+		pop bc
+
+		pop hl
+		jp .loop 
+	.not_u
+
+	cp "d"
+	jr nz, .not_d
+		push hl
+
+		ld a, [bc]
+		ld e, a
+		inc bc
+		ld a, [bc]
+		ld d, a
+		inc bc
+
+		push bc
+
+		cp $80
+		jr c, .positive
+			push de
+			ld a, "-"
+			call putchar
+			pop de
+
+			TWOS_COMPLEMENT_R16 de
+		.positive
+
+		call _bcd
+
+		call printhexl
+
+		pop bc
+
+		pop hl
+		jp .loop 
+	.not_d
+
+	push hl
+	push bc
+	call putchar
+	pop bc
+	pop hl
+	jp .loop
+; _vprintf
+
+
+; _printf
+;
+; c function signiature:
+; int printf(const char*, ...);
+;
+; input:
+; - stack : fmt string ptr, variable arguments
+;
+; returns:
+; - `bc` : TODO: number of characters written
+;
+; destroys `af`, `bc`, `de`, `hl`
+_printf:
+	ld	hl, sp+4 ; variable arguments list ptr
+	ld	c, l
+	ld	b, h
+	
+	ld	hl, sp+2 ; format string ptr ptr
+	ld	e, [hl]
+	inc	hl
+	ld	d, [hl]
+	jp	_vprintf
+; _printf
 
 
 ; section "character width table", ROMX, ALIGN[8]
