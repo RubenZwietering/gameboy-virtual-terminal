@@ -1,6 +1,10 @@
 include "hardware.inc"
 include "macros.inc"
 include "char.inc"
+include "input.inc"
+include "debug.inc"
+
+export hex_map
 
 export _hardware
 export frame_count
@@ -206,11 +210,31 @@ soft_init:
 
 	.halting
 		halt
-		; nop ; assembler takes care of halt bug
-	jr .halting
+		nop ; halt bug
+
+		.read_input_buffer
+		INPUT_BUFFER_UNREAD
+		jr z, .halting
+
+		INPUT_BUFFER_POP
+
+		cp $0d
+		jr nz, .not_cr
+			ld a, $0a
+		.not_cr
+		cp $7f
+		jr nz, .not_delete
+			ld a, $08
+		.not_delete
+
+		call putchar
+		call cursor_reset_blink
+
+	jr .read_input_buffer
 
 ; vblank
 vblank:
+	ei ; allow nested interrups so serial communication can still happen without data corruption
 	PUSH_ALL
 	call read_joypad
 	call check_input
@@ -264,16 +288,29 @@ vblank:
 	;call OAMDMA ; dma routine
 
 	POP_ALL
-	reti
+	ret ; reti
 ; vblank
 
 ; serial_interrupt
 serial_interrupt:
-	PUSH_ALL
+	; PUSH_ALL
+	push af
+	
+	; DPUTS "serial interrupt"
+	
+	ld a, [rSB]
+	cp $ff
+	jr z, .ignore_input
+		push hl
+		INPUT_BUFFER_PUSH
+		pop hl
+	.ignore_input
 
+	ld a, SCF_START
+	ld [rSC], a
 
-
-	POP_ALL
+	pop af
+	; POP_ALL
 	reti
 ; serial_interrupt
 
