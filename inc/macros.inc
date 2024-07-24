@@ -31,6 +31,41 @@ macro POP_ALL
 endm
 ; POP_ALL
 
+
+; SWAP_R16
+; 
+; description:
+; swap low and high bytes of R
+;
+; arguments:
+; - R : 16 bit register to swap
+; 
+; destroys `a`
+macro SWAP_R16
+	ld a, LOW(\1)
+	ld LOW(\1), HIGH(\1)
+	ld HIGH(\1), a
+endm
+; SWAP_R16
+
+
+; LD_R16_R16
+; 
+; description:
+; load R2 into R1
+;
+; arguments:
+; - R1 : 16 bit to be loaded by R2
+; - R2 : 16 bit to load into R1
+; 
+; destroys none
+macro LD_R16_R16
+	ld HIGH(\1), HIGH(\2)
+	ld Low(\1), LOW(\2)
+endm
+; LD_R16_R16
+
+
 ; COMPLEMENT : flips all bits in register R
 ;
 ; arguments
@@ -46,6 +81,46 @@ macro COMPLEMENT
 	ld \1, a
 endm
 ; COMPLEMENT
+
+
+; TWOS_COMPLEMENT_R8
+; 
+; description:
+; performs two's complement on R
+; 
+; arguments:
+; - R : 8 bit register
+; 
+; destroys `af`
+macro TWOS_COMPLEMENT_R8
+	ld a, \1
+	cpl
+	inc a
+	ld \1, a
+endm
+; TWOS_COMPLEMENT_R8
+
+
+; TWOS_COMPLEMENT_R16
+; 
+; description:
+; performs two's complement on R
+; 
+; arguments:
+; - R : 16 bit register
+; 
+; destroys `af`
+macro TWOS_COMPLEMENT_R16
+	ld a, LOW(\1)
+	cpl
+	add 1
+	ld LOW(\1), a
+	ld a, HIGH(\1)
+	cpl
+	adc 0
+	ld HIGH(\1), a
+endm
+; TWOS_COMPLEMENT_R16
 
 
 ; CP_N_R: compare value N to register(s) R
