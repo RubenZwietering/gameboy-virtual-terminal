@@ -2,4 +2,8 @@
 *.o
 *.sym
 
-.vscode/
+/bin
+/dep
+/obj
+
+/.vscode
