@@ -42,4 +42,52 @@ def BUTTON_DOWN_UP_OFFSET			equ $a0
 def BUTTON_REPEAT_OFFSET			equ $140
 ;
 
+
+; INPUT_BUFFER_PUSH
+; 
+; input:
+; - `a` : value
+; 
+; destroys: `f`, `hl`
+macro INPUT_BUFFER_PUSH
+	ld hl, input_buffer_write_ptr
+	inc [hl]
+	ld l, [hl]
+	ld h, HIGH(input_buffer)
+	ld [hl], a
+endm
+; INPUT_BUFFER_PUSH
+
+
+; INPUT_BUFFER_POP
+; 
+; returns:
+; - `a` : value
+;
+; destroys: `af`, `hl`
+macro INPUT_BUFFER_POP
+	ld hl, input_buffer_read_ptr
+	inc [hl]
+	ld l, [hl]
+	ld h, HIGH(input_buffer)
+	ld a, [hl]
+endm
+; INPUT_BUFFER_POP
+
+
+; INPUT_BUFFER_UNREAD
+; 
+; returns:
+; - `a` : value
+; - `Z` : set if 0
+;
+; destroys: `af`, `b`
+macro INPUT_BUFFER_UNREAD
+	ld a, [input_buffer_read_ptr]
+	ld b, a
+	ld a, [input_buffer_write_ptr]
+	sub b
+endm
+; INPUT_BUFFER_UNREAD
+
 endc ; INPUT_INC

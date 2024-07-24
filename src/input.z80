@@ -1,6 +1,13 @@
 include "input.inc"
 
 export init_input_mem
+
+export input_buffer_read_ptr
+export input_buffer_write_ptr
+
+export input_buffer
+export input_buffer_end
+
 export check_input
 
 section "input variables", WRAMX
@@ -13,6 +20,13 @@ button_select_frame_down: 	ds 1
 button_start_frame_down: 	ds 1
 button_a_frame_down: 		ds 1
 button_b_frame_down: 		ds 1
+
+input_buffer_read_ptr:		ds 1
+input_buffer_write_ptr:		ds 1
+
+section "input buffer", wramx, align[8]
+input_buffer: 				ds $100
+input_buffer_end:
 
 section "input functions", ROMX
 
@@ -30,6 +44,14 @@ init_input_mem:
 	ld [button_start_frame_down], a
 	ld [button_a_frame_down], a
 	ld [button_b_frame_down], a
+
+	ld [input_buffer_read_ptr], a
+	ld [input_buffer_write_ptr], a
+
+	; unnecessary
+	; ld hl, input_buffer
+	; ld bc, input_buffer_end - input_buffer
+	; call memset
 
 	ret
 ; init_input_mem
