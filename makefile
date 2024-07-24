@@ -47,8 +47,8 @@ else ifeq ($(EMU),bgb)
 		EFLAGS:=$(EFLAGS) --setting SystemMode=1
 	endif
 	ifneq ($(CABLE),) # default for bgb 127.0.0.1:8765 or 127.0.0.1
-		# or --connect
-		EFLAGS:=$(EFLAGS) --listen $(CABLE)
+		# or --listen
+		EFLAGS:=$(EFLAGS) --connect $(CABLE)
 	endif
 	ESUFFIX:=2> /dev/null
 else ifeq ($(EMU),emulicious)
