@@ -308,6 +308,25 @@ value_on_screen:
 on_button_down:
 	call cursor_reset_blink
 
+	bit PADB_SELECT, b
+	jr z, .no_button_select
+
+		ld a, [frame_count]
+		ld [rSB], a
+
+		ld a, SCF_START | SCF_SOURCE
+		ld [rSC], a
+
+		ld a, [frame_count]
+		ld d, 0
+		ld e, a
+
+		PRINTF "\rByte out: %c %x %d\n", de, de, de
+
+		DPUTS "send serial byte"
+	
+	.no_button_select
+
 	ret 
 ; on_button_down
 
