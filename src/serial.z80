@@ -1,0 +1,25 @@
+include "hardware.inc"
+include "input.inc"
+
+section "serial interrupt", ROM0[INT_HANDLER_SERIAL] ; max 8 bytes
+jp serial_interrupt_handler
+
+section "serial functions", ROMX
+; serial_interrupt_handler
+serial_interrupt_handler:
+	push af
+	
+	ld a, [rSB]
+	cp $ff
+	jr z, .ignore_input
+		push hl
+		INPUT_BUFFER_PUSH
+		pop hl
+	.ignore_input
+
+	ld a, SCF_START
+	ld [rSC], a
+
+	pop af
+	reti
+; serial_interrupt_handler

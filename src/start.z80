@@ -23,9 +23,6 @@ reti
 section "Timer Overflow interrupt", ROM0[INT_HANDLER_TIMER] ; max 8 bytes
 reti
 
-section "Serial interrupt", ROM0[INT_HANDLER_SERIAL] ; max 8 bytes
-jp serial_interrupt
-
 section "Joypad interrupt", ROM0[INT_HANDLER_JOYPAD] ; max 8 bytes
 reti
 
@@ -290,29 +287,6 @@ vblank:
 	POP_ALL
 	ret ; reti
 ; vblank
-
-; serial_interrupt
-serial_interrupt:
-	; PUSH_ALL
-	push af
-	
-	; DPUTS "serial interrupt"
-	
-	ld a, [rSB]
-	cp $ff
-	jr z, .ignore_input
-		push hl
-		INPUT_BUFFER_PUSH
-		pop hl
-	.ignore_input
-
-	ld a, SCF_START
-	ld [rSC], a
-
-	pop af
-	; POP_ALL
-	reti
-; serial_interrupt
 
 ; TODO: TEST
 ; value_on_screen
