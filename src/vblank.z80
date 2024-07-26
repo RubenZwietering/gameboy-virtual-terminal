@@ -1,0 +1,110 @@
+include "hardware.inc"
+include "macros.inc"
+include "debug.inc"
+include "cursor.inc"
+
+export frame_count
+
+export init_vblank_mem
+
+section "vblank variables", wramx
+frame_count:				ds 1
+in_vblank_handler:			ds 1
+
+section "vblank interrupt", ROM0[INT_HANDLER_VBLANK] ; max 8 bytes
+jp vblank_handler
+
+section "vblank functions", ROMX
+; init_vblank_mem
+; 
+; destroys `af`
+init_vblank_mem:
+	xor a
+	ld [frame_count], a
+	ld [in_vblank_handler], a
+	ret
+; init_vblank_mem
+
+
+; vblank_handler
+vblank_handler:
+	ei ; allow nested interrups so serial communication can still happen without data corruption
+	PUSH_ALL
+
+	ld a, [in_vblank_handler]
+	or a ; cp 0
+	jp nz, .return_vblank		; drop frame if already handling vblank
+
+	inc a ; ld a, 1
+	ld [in_vblank_handler], a
+	
+	call read_joypad
+	call check_input
+
+	ld hl, frame_count
+	inc [hl]
+
+	ld a, [cursor_blink_next_frame]
+	cp [hl]
+	push af
+
+	; drawing
+	;call wait_vblank
+
+	ld hl, cursor_object
+	ld a, [cursor_y]
+	add a ; sla a
+	add a ; sla a
+	add a ; sla a
+	ld b, OAM_Y_OFS
+	add b
+	ld [hli], a				; OAMA_Y
+
+	ld a, [cursor_x]
+	add a ; sla a
+	add a ; sla a
+	add a ; sla a
+	ld b, OAM_X_OFS
+	add b
+	ld [hli], a				; OAMA_X
+
+	pop af
+	jr nz, .no_cursor_blink
+		add CURSOR_BLINK_RATE
+		ld [cursor_blink_next_frame], a
+
+		ld a, [hl]
+		xor CURSOR_CHARACTER
+		ld [hl], a			; OAMA_TILEID
+	.no_cursor_blink
+
+	ld a, [character_window_offset]
+	add a ; sla a
+	add a ; sla a
+	add a ; sla a
+	ld [rSCY], a ; character_window_offset * 8
+
+	for Y, SCRN_VY_B
+		ld hl, _SCRN0 + SCRN_VX_B * Y
+		ld de, character_buffer + SCRN_X_B * Y
+		ld bc, SCRN_X_B
+		call vmemcpy
+	endr
+
+	;ld a, HIGH(SHADOW_OAM)
+	;call OAMDMA ; dma routine
+
+	xor a
+	ld [in_vblank_handler], a
+
+	.return_vblank
+	if def(DEBUG)
+	jr z, .no_dputs
+		ld a, [frame_count]
+		DPUTS "dropped frame #%A% CLK #%TOTALCLKS%"
+	.no_dputs
+	endc
+
+	POP_ALL
+	ret ; reti
+; vblank_handler

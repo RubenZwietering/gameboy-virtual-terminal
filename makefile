@@ -73,6 +73,7 @@ ASRCS:=							\
 	screen.z80					\
 	serial.z80					\
 	start.z80					\
+	vblank.z80					\
 	# $(wildcard $(SDIR)/*.z80)
 CSRCS:=							\
 	main.c						\
