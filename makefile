@@ -65,6 +65,7 @@ endif
 ASRCS:=							\
 	char.z80					\
 	bcd.z80						\
+	crash.z80					\
 	div.z80						\
 	input.z80					\
 	joypad.z80					\

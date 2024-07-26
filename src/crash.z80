@@ -1,0 +1,21 @@
+include "debug.inc"
+
+section "crash reset vector", ROM0[$0038] ; max 8 bytes
+; RST $38 is opcode $ff which means an invalid jump/call/ret
+; most likely due to stack corruption/overflow/smash
+di
+jp crash_handler
+
+section "crash functions", ROMX
+; crash_handler
+; 
+; does not return
+crash_handler:
+	DPUTS "CRASH %ALLREGS%"
+	BREAKPOINT
+	.sleep
+	ld sp, $fffe			; restore stack
+	call wait_vblank		; don't stop while drawing
+	stop
+	jr .sleep				; in case we woke up
+; crash_handler
