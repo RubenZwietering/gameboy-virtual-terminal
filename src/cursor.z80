@@ -1,0 +1,53 @@
+include "hardware.inc"
+include "cursor.inc"
+
+export cursor_object
+export cursor_x
+export cursor_y
+export cursor_blink_next_frame
+
+export init_cursor_mem
+
+export cursor_reset_blink
+
+section "cursor object oam", OAM
+cursor_object:				ds sizeof_OAM_ATTRS
+
+section "cursor variables", WRAMX
+cursor_x: 					ds 1
+cursor_y: 					ds 1
+cursor_blink_next_frame: 	ds 1
+
+section "cursor functions", ROMX
+; init_cursor_mem
+; 
+; destroys `af`, `bc`, `hl`
+init_cursor_mem:
+	xor a
+	ld hl, cursor_object
+	ld [hli], a				; OAMA_Y
+	ld [hli], a				; OAMA_X
+	ld [hli], a				; OAMA_TILEID
+	ld [hl], a				; OAMA_FLAGS
+	
+	ld [cursor_x], a
+	ld [cursor_y], a
+
+	ld a, 1
+	ld [cursor_blink_next_frame], a
+	ret
+; init_character_mem
+
+
+; cursor_reset_blink
+;
+; destroys `af`
+cursor_reset_blink:
+	ld a, [frame_count]
+	add CURSOR_BLINK_RATE
+	ld [cursor_blink_next_frame], a
+	; TODO: change this so it isnt accessing outside of vblank
+	ld a, CURSOR_CHARACTER
+	ld [cursor_object + OAMA_TILEID], a
+	ret
+; cursor_reset_blink

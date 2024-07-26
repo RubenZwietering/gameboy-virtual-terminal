@@ -1,5 +1,6 @@
 include "hardware.inc"
 include "macros.inc"
+include "cursor.inc"
 include "char.inc"
 include "input.inc"
 include "debug.inc"
@@ -84,6 +85,7 @@ soft_init:
 	call init_screen_mem
 	call init_joypad_mem
 	call init_input_mem
+	call init_cursor_mem
 	call init_character_mem
 
 	xor a
@@ -165,28 +167,13 @@ soft_init:
 
 	.end_dmg_palette
 
-	; cursor
-	; first object oam
-	ld hl, CURSOR_OBJECT_PTR
-	; y
-	ld [hli], a
-	; x
-	ld [hli], a
-	; tile id
-	ld a, CURSOR_CHARACTER
-	ld [hli], a
-	; flags
-	xor a
-	ld [hl], a
-	;
-
 	xor a
 	
 	ld [rSCY], a
 	ld [rSCX], a
 
-	ld [rWY], a
-	ld a, $07 ; for some reason this needs to be 7 otherwise the backgrounds shifts by 7 pixels when window layer is enabled
+	ld [rWY], a ; WY_OFS
+	ld a, WX_OFS
 	ld [rWX], a
 
 	; turn screen on, display background and objects
@@ -246,23 +233,22 @@ vblank:
 	; drawing
 	;call wait_vblank
 
-
-	ld hl, CURSOR_OBJECT_PTR
+	ld hl, cursor_object
 	ld a, [cursor_y]
-	sla a
-	sla a
-	sla a
-	ld b, 16
+	add a ; sla a
+	add a ; sla a
+	add a ; sla a
+	ld b, OAM_Y_OFS
 	add b
-	ld [hli], a
+	ld [hli], a				; OAMA_Y
 
 	ld a, [cursor_x]
-	sla a
-	sla a
-	sla a
-	ld b, 8
+	add a ; sla a
+	add a ; sla a
+	add a ; sla a
+	ld b, OAM_X_OFS
 	add b
-	ld [hli], a
+	ld [hli], a				; OAMA_X
 
 	pop af
 	jr nz, .no_cursor_blink
@@ -271,7 +257,7 @@ vblank:
 
 		ld a, [hl]
 		xor CURSOR_CHARACTER
-		ld [hl], a
+		ld [hl], a			; OAMA_TILEID
 	.no_cursor_blink
 
 	for Y, SCRN_Y_B
