@@ -12,7 +12,7 @@ SDIR:=src
 
 # https://rgbds.gbdev.io/docs/master/rgbasm.1
 ASM:=rgbasm
-AFLAGS:=-Wall -I $(IDIR)
+AFLAGS:=-Wall -I $(IDIR) -D DEBUG
 CC:=sdcc
 CFLAGS:=--std=c23 -msm83 --asm=rgbds -S
 LINK:=rgblink
