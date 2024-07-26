@@ -23,7 +23,6 @@ GFX:=rgbgfx
 GFLAGS:=
 EMU?=sameboy
 EFLAGS?=
-ESUFFIX?=
 HW?=
 CABLE?=
 
@@ -50,7 +49,6 @@ else ifeq ($(EMU),bgb)
 		# or --listen
 		EFLAGS:=$(EFLAGS) --connect $(CABLE)
 	endif
-	ESUFFIX:=2> /dev/null
 else ifeq ($(EMU),emulicious)
 	ifeq ($(HW),dmg)
 		EFLAGS:=$(EFLAGS) -set System=GAME_BOY
@@ -116,7 +114,7 @@ $(ODIR) $(DDIR) $(BDIR):
 .PHONY: all run flash clean
 
 run: all
-	$(EMU) $(EFLAGS) $(OUT) $(ESUFFIX)
+	$(EMU) $(EFLAGS) $(OUT)
 
 flash: all
 	flashgbx --mode dmg --action flash-rom $(OUT)
