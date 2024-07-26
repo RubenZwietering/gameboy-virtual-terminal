@@ -37,6 +37,7 @@ section "character functions", ROMX
 ; 
 ; destroys `af`, `bc`, `hl`
 init_character_mem:
+	xor a
 
 
 	ld a, " "
