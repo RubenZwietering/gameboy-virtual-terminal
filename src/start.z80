@@ -194,19 +194,12 @@ soft_init:
 	ei
 	call _main
 
-	.halting
-		halt
-		nop ; halt bug
+	.getchar
+		call getchar
 
-		.read_input_buffer
-		INPUT_BUFFER_UNREAD
-		jr z, .halting
-
-		INPUT_BUFFER_POP
-
-		cp $0d
+		cp "\r"
 		jr nz, .not_cr
-			ld a, $0a
+			ld a, "\n"
 		.not_cr
 		cp $7f
 		jr nz, .not_delete
@@ -215,8 +208,7 @@ soft_init:
 
 		call putchar
 		call cursor_reset_blink
-
-	jr .read_input_buffer
+	jr .getchar
 
 ; vblank
 vblank:
