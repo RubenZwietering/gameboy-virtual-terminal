@@ -1,5 +1,6 @@
 include "hardware.inc"
 include "screen.inc"
+include "input.inc"
 include "char.inc"
 include "debug.inc"
 include "macros.inc"
@@ -14,6 +15,8 @@ export init_character_mem
 
 export cursor_reset_blink
 export _gotoxy
+export _getchar
+export getchar
 export _putchar
 export putchar
 export _puts
@@ -214,6 +217,38 @@ _cursor_up:
 
 	ret
 ; _cursor_up
+
+
+; _getchar
+; 
+; c function signiature:
+; char getchar();
+;
+; returns:
+; - `a` : character
+; 
+; destroys `af`, `b`, `hl`
+_getchar:
+	jr getchar
+; _getchar
+
+
+; getchar
+;
+; returns:
+; - `a` : character
+;
+; destroys `af`, `b`, `hl`
+	getchar.pause
+	halt
+	nop ; halt bug
+getchar:
+	INPUT_BUFFER_UNREAD
+	jr z, .pause
+
+	INPUT_BUFFER_POP
+	ret
+; getchar
 
 
 ; _putchar
