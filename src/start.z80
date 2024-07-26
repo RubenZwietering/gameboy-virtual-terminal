@@ -41,6 +41,7 @@ hex_map: 			db "0123456789ABCDEF"
 section "global variables", wramx
 _hardware:					ds 1 ; 0 = dmg, 1 = cgb, 2 = gba
 frame_count:				ds 1
+in_vblank_handler:			ds 1
 
 section "init", ROMX
 init:
@@ -90,6 +91,7 @@ soft_init:
 
 	xor a
 	ld [frame_count], a
+	ld [in_vblank_handler], a
 
 	; end of ram population
 
@@ -220,6 +222,14 @@ soft_init:
 vblank:
 	ei ; allow nested interrups so serial communication can still happen without data corruption
 	PUSH_ALL
+
+	ld a, [in_vblank_handler]
+	or a ; cp 0
+	jp nz, .return_vblank		; drop frame if already handling vblank
+
+	inc a ; ld a, 1
+	ld [in_vblank_handler], a
+	
 	call read_joypad
 	call check_input
 
@@ -269,6 +279,17 @@ vblank:
 
 	;ld a, HIGH(SHADOW_OAM)
 	;call OAMDMA ; dma routine
+
+	xor a
+	ld [in_vblank_handler], a
+
+	.return_vblank
+	if def(DEBUG)
+	jr z, .no_dputs
+		ld a, [frame_count]
+		DPUTS "dropped frame #%A% CLK #%TOTALCLKS%"
+	.no_dputs
+	endc
 
 	POP_ALL
 	ret ; reti
