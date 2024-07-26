@@ -6,6 +6,8 @@ include "cursor.inc"
 include "debug.inc"
 include "macros.inc"
 
+export character_window_offset
+
 export character_buffer
 export character_buffer_end
 
@@ -26,9 +28,10 @@ export _vprintf
 export _printf
 
 section "character variables", WRAMX
+character_window_offset:	ds 1
 
 section "character output buffer", WRAMX, ALIGN[8]
-character_buffer: 		ds SCRN_X_B * SCRN_Y_B
+character_buffer: 		ds SCRN_X_B * SCRN_VY_B
 character_buffer_end:
 def CHARACTER_BUFFER_SIZE equ character_buffer_end - character_buffer
 
@@ -38,6 +41,7 @@ section "character functions", ROMX
 ; destroys `af`, `bc`, `hl`
 init_character_mem:
 	xor a
+	ld [character_window_offset], a
 
 
 	ld a, " "
@@ -97,7 +101,7 @@ scroll_buffer:
 	cp $01
 	jr z, scroll_buffer_once
 
-	cp SCRN_Y_B
+	cp SCRN_VY_B
 	jr nc, .clear
 
 	ld h, a
@@ -149,6 +153,53 @@ scroll_buffer:
 ; scroll_buffer
 
 
+; scroll_window_once
+; 
+; destroys `af`, `bc`, `de`, `hl`
+scroll_window_once:
+	ld a, [character_window_offset]
+	ld h, a
+	ld e, SCRN_X_B
+	call mul_h_e
+	; hl = character_window_offset * SCRN_X_B
+
+	ld de, character_buffer + SCRN_Y_B * SCRN_X_B
+	add hl, de
+	; hl = character_buffer + SCRN_Y_B * SCRN_X_B + character_window_offset * SCRN_X_B
+
+	ld a, h
+	cp HIGH(character_buffer_end)		; h - HIGH(character_buffer_end)
+	jr c, .smaller_than_buffer			; jump if HIGH(character_buffer_end) > h
+		jr nz, .skip_check_low_byte		; jump if h != HIGH(character_buffer_end)
+			ld a, l
+			cp LOW(character_buffer_end)	; l - LOW(character_buffer_end)
+			jr c, .smaller_than_buffer		; jump if LOW(character_buffer_end) > l
+		.skip_check_low_byte
+				ld de, -(CHARACTER_BUFFER_SIZE)
+				add hl, de
+	.smaller_than_buffer
+	; if hl >= character_buffer_end -> hl -= CHARACTER_BUFFER_SIZE
+
+	ld a, " "
+	ld bc, SCRN_X_B
+	call memset
+
+	ld a, [character_window_offset]
+	inc a
+	cp SCRN_VY_B
+	jr c, .skip
+		sub SCRN_VY_B
+	.skip
+	ld [character_window_offset], a
+
+	ld h, HIGH(character_update_table)
+	ld l, a
+	ld a, SCRN_X_B
+	ld [hl], a
+	ret
+; scroll_window_once
+
+
 ; cursor_forward
 ; 
 ; destoys `af`
@@ -171,7 +222,7 @@ cursor_forward:
 	ld a, SCRN_Y_B - 1
 	ld [cursor_y], a
 
-	jp scroll_buffer_once
+	jp scroll_window_once
 ; cursor_forward
 
 
@@ -265,6 +316,15 @@ putchar:
 	jr nc, .return_without_write			; return if cursor is outsite visible area
 
 	ld e, a
+	ld a, [character_window_offset]
+	add e
+	
+	cp SCRN_VY_B
+	jr c, .skip
+		sub SCRN_VY_B
+	.skip
+
+	ld e, a
 	ld h, SCRN_X_B
 	call mul_h_e
 
@@ -307,7 +367,7 @@ putchar:
 		ld a, SCRN_Y_B - 1
 		ld [cursor_y], a
 
-		jp scroll_buffer_once
+		jp scroll_window_once
 	.not_linefeed
 
 	cp $0d
@@ -361,7 +421,7 @@ putchar:
 
 		ld a, [cursor_y]
 		cp SCRN_Y_B
-		jp nc, scroll_buffer_once
+		jp nc, scroll_window_once
 
 		inc a
 		ld [cursor_y], a

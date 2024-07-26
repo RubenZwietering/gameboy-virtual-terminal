@@ -262,7 +262,13 @@ vblank:
 		ld [hl], a			; OAMA_TILEID
 	.no_cursor_blink
 
-	for Y, SCRN_Y_B
+	ld a, [character_window_offset]
+	add a ; sla a
+	add a ; sla a
+	add a ; sla a
+	ld [rSCY], a ; character_window_offset * 8
+
+	for Y, SCRN_VY_B
 		ld hl, _SCRN0 + SCRN_VX_B * Y
 		ld de, character_buffer + SCRN_X_B * Y
 		ld bc, SCRN_X_B
