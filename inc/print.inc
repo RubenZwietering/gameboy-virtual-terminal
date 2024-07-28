@@ -1,6 +1,7 @@
 if !def(PRINT_INC)
 def PRINT_INC equ 1
 
+include "macros.inc"
 include "memory.inc"
 
 ; PRINTF
@@ -25,13 +26,13 @@ macro PRINTF
 
 	pops
 
-	def FORMAT_NARG equ _NARG
+	def FORMAT_NARG equ _NARG - 1
 
-	shift FORMAT_NARG - 1
+	shift FORMAT_NARG
 
 	def MODIFIED_HL = 0
 
-	rept FORMAT_NARG - 1
+	rept FORMAT_NARG
 		if strlen("\1") == 2 \
 		 &&(strcmp(strlwr("\1"), "af") == 0 \
 		 || strcmp(strlwr("\1"), "bc") == 0 \
@@ -64,10 +65,12 @@ macro PRINTF
 		shift -1
 	endr
 
-	ld de, __printf_fmt_str\@
-	push de
+	ld hl, sp+0
+	LD_R16_R16 bc, hl
 
-	call _printf
+	ld hl, __printf_fmt_str\@
+
+	call vprintf
 	add	sp, FORMAT_NARG * 2
 
 	purge MODIFIED_HL
