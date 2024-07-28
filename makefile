@@ -70,6 +70,7 @@ ASRCS:=							\
 	joypad.z80					\
 	memory.z80					\
 	mul.z80						\
+	print.z80					\
 	screen.z80					\
 	serial.z80					\
 	start.z80					\
