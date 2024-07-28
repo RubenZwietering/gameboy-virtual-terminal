@@ -22,6 +22,8 @@ export _puts
 export puts
 export _print_byte
 export print_byte
+export _print_bits
+export print_bits
 export _print_string
 export print_string
 export _vprintf
@@ -563,6 +565,100 @@ print_non_zero_nibbles:
 	ret
 ; print_non_zero_nibbles
 
+
+; _print_bits
+; 
+; description:
+; print 8 bits
+; 
+; c function signiature:
+; int print_bits(unsigned char);
+;
+; input:
+; - `a` : value
+;
+; returns:
+; - `bc` : number of characters written
+;
+; destroys `af`, `bc`, `de`, `hl`
+_print_bits:
+	; fallthrough
+
+; print_bits
+;
+; input:
+; - `a` : value
+;
+; returns:
+; - `bc` : number of characters written
+;
+; destroys `af`, `bc`, `de`, `hl`
+print_bits:
+	ld h, a
+	ld l, 8
+	
+	.loop
+		xor a
+		sla h
+		adc "0"
+
+		push hl
+		call putchar
+		pop hl
+
+		dec l
+	jr nz, .loop
+
+	; TODO: return correct number of characters written
+	ld bc, 8
+	ret
+; print_bits
+; _print_bits
+
+
+; print_non_zero_bits
+;
+; input:
+; - `a` : value
+;
+; returns:
+; - `bc` : number of characters written
+;
+; destroys `af`, `bc`, `de`, `hl`
+print_non_zero_bits:
+	ld h, a
+	ld l, 8
+
+	.discard_leading_zeros_loop
+		dec l
+		sla h
+	jr nc, .discard_leading_zeros_loop
+
+	rr h
+	
+	.print_loop
+		xor a
+		sla h
+		adc "0"
+
+		push hl
+		call putchar
+		pop hl
+			
+		dec l
+	jr nz, .print_loop
+
+	xor a
+	sla h
+	adc "0"
+	call putchar
+
+	; TODO: return correct number of characters written
+	ld bc, 8
+	ret
+; print_non_zero_bits
+
+
 ; _print_hex
 ; 
 ; description:
@@ -863,6 +959,44 @@ _vprintf:
 		pop hl
 		jp .loop 
 	.not_d
+
+	cp "b"
+	jr nz, .not_b
+		push hl
+
+		ld a, [bc]
+		ld e, a
+		inc bc
+		ld a, [bc]
+		ld d, a
+		inc bc
+
+		push bc
+
+		; ld a, d
+		or a
+		jr z, .ignore_upper_bits
+			push de
+			call print_non_zero_bits
+			pop de
+	
+			ld a, e
+			call print_bits
+	
+			pop bc
+
+			pop hl
+			jp .loop
+		.ignore_upper_bits
+	
+		ld a, e
+		call print_non_zero_bits
+
+		pop bc
+
+		pop hl
+		jp .loop
+	.not_b
 
 	push hl
 	push bc
