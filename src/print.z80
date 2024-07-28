@@ -431,11 +431,13 @@ vprintf:
 		jp z, .conversion_x_lower
 		cp "X"
 		jp z, .conversion_x_upper
-
 		cp "u"
 		jp z, .conversion_u
 		cp "b"
 		jp z, .conversion_b
+		; f/F, e/E, a/A, g/G, n
+		cp "p"
+		jp z, .conversion_p
 
 		push hl
 		push bc
@@ -587,7 +589,6 @@ vprintf:
 		pop hl
 		jp vprintf
 
-	
 	.conversion_b
 		push hl
 
@@ -619,6 +620,26 @@ vprintf:
 		ld a, e
 		call print_non_zero_bits
 
+		pop bc
+
+		pop hl
+		jp vprintf
+
+	.conversion_p
+		push hl
+
+		ld a, [bc]
+		inc bc
+
+		push bc
+		call print_byte
+		pop bc
+
+		ld a, [bc]
+		inc bc
+
+		push bc
+		call print_byte
 		pop bc
 
 		pop hl
