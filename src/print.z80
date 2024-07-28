@@ -173,10 +173,13 @@ print_non_zero_bits:
 
 	.discard_leading_zeros_loop
 		dec l
+		jr z, .break
 		sla h
 	jr nc, .discard_leading_zeros_loop
 
 	rr h
+	.break
+	inc l
 	
 	.print_loop
 		xor a
@@ -189,11 +192,6 @@ print_non_zero_bits:
 			
 		dec l
 	jr nz, .print_loop
-
-	xor a
-	sla h
-	adc "0"
-	call putchar
 
 	; TODO: return correct number of characters written
 	ld bc, 8
