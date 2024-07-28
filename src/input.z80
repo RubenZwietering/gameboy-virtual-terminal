@@ -1,3 +1,4 @@
+include "hardware.inc"
 include "input.inc"
 
 export init_input_mem
@@ -11,15 +12,15 @@ export input_buffer_end
 export check_input
 
 section "input variables", WRAMX
-button_up_frame_down: 		ds 1
-button_left_frame_down: 	ds 1
-button_right_frame_down: 	ds 1
-button_down_frame_down: 	ds 1
+button_up_repeat_next_frame: 		ds 1
+button_left_repeat_next_frame: 		ds 1
+button_right_repeat_next_frame: 	ds 1
+button_down_repeat_next_frame: 		ds 1
 
-button_select_frame_down: 	ds 1
-button_start_frame_down: 	ds 1
-button_a_frame_down: 		ds 1
-button_b_frame_down: 		ds 1
+button_select_repeat_next_frame: 	ds 1
+button_start_repeat_next_frame: 	ds 1
+button_a_repeat_next_frame: 		ds 1
+button_b_repeat_next_frame: 		ds 1
 
 input_buffer_read_ptr:		ds 1
 input_buffer_write_ptr:		ds 1
@@ -29,21 +30,20 @@ input_buffer: 				ds $100
 input_buffer_end:
 
 section "input functions", ROMX
-
 ; init_input_mem
 ;
 ; destroys `af`
 init_input_mem:
 	xor a
-	ld [button_up_frame_down], a
-	ld [button_left_frame_down], a
-	ld [button_right_frame_down], a
-	ld [button_down_frame_down], a
+	ld [button_up_repeat_next_frame], a
+	ld [button_left_repeat_next_frame], a
+	ld [button_right_repeat_next_frame], a
+	ld [button_down_repeat_next_frame], a
 	
-	ld [button_select_frame_down], a
-	ld [button_start_frame_down], a
-	ld [button_a_frame_down], a
-	ld [button_b_frame_down], a
+	ld [button_select_repeat_next_frame], a
+	ld [button_start_repeat_next_frame], a
+	ld [button_a_repeat_next_frame], a
+	ld [button_b_repeat_next_frame], a
 
 	ld [input_buffer_read_ptr], a
 	ld [input_buffer_write_ptr], a
@@ -56,586 +56,95 @@ init_input_mem:
 	ret
 ; init_input_mem
 
-; old check_input
-	; destroys af, bc, de, hl
-	; check_input:
-
-	; 	ld hl, JOYPAD_STATE
-	; 	ld b, [hl]
-	; 	ld a, [JOYPAD_STATE_OLD]
-	; 	ld c, a
-	; 	push bc
-	; 	xor b ; changed button states
-	; 	and b ; only button down states
-		
-	; 	jr z, .no_button_down
-	; 		ld b, a
-	; 		and PADF_RIGHT | PADF_LEFT | PADF_UP | PADF_DOWN
-	; 		jr z, .no_directional_button_down
-
-	; 			ld a, [frame_count]
-	; 			and BUTTON_REPEAT_FRAMES
-	; 			ld [JOYPAD_FRAME_HELD], a
-
-	; 			call scroll_screen
-	; 			;call move_cursor
-	; 		.no_directional_button_down
-
-	; 		pop bc
-	; 		push bc
-
-	; 		ld a, b
-	; 		and PADF_A
-	; 		jr z, .no_button_a
-	; 			ld hl, _SCRN0
-	; 			ld bc, _SCRN1 - _SCRN0
-	; 			xor a
-	; 			call memset
-	; 		.no_button_a
-
-	; 		; maybe remove these down the line when the a button press is refactored
-	; 		pop bc
-	; 		push bc
-	; 		;ld bc, [sp]
-
-	; 		ld a, b
-	; 		and PADF_B
-	; 		jr z, .no_button_b
-	; 			ld hl, _SCRN0
-	; 			ld bc, _SCRN1 - _SCRN0
-	; 			ld a, 3
-	; 			call memset
-	; 		.no_button_b
-
-	; 		pop bc
-	; 		push bc
-
-	; 		ld a, b
-	; 		and PADF_SELECT
-	; 		jr z, .no_button_select
-
-	; 			ld a, [rLCDC]
-	; 			xor LCDCF_WINON
-	; 			ld [rLCDC], a
-				
-	; 		.no_button_select
-
-
-	; 		pop bc
-	; 		push bc
-
-	; 		ld a, b
-	; 		and PADF_START
-	; 		jr z, .no_button_start
-
-	; 			ld a, [rKEY1]
-	; 			xor %00000001
-	; 			ld [rKEY1], a
-	; 			stop 
-				
-	; 		.no_button_start
-
-	; 	.no_button_down
-
-	; 	pop bc
-	; 	ld a, c
-	; 	and b ; only held button states
-
-	; 	jr z, .no_button_held
-	; 		ld b, a
-	; 		and PADF_RIGHT | PADF_LEFT | PADF_UP | PADF_DOWN
-	; 		jr z, .no_directional_button_held
-	; 			ld a, [frame_count]
-	; 			and BUTTON_REPEAT_FRAMES
-	; 			ld c, a
-	; 			ld a, [JOYPAD_FRAME_HELD]
-	; 			cp c
-
-	; 			call z, scroll_screen
-	; 			;call z, move_cursor
-	; 		.no_directional_button_held
-	; 	.no_button_held
-
-	; 	ret
-;
-
-; on_button_down : buttons that are held this read but not the last
-;
-; input
-; - `b`  : buttons
-; on_button_down:
-; 	bit PADB_A, b
-; 	jr z, .no_button_a
-; 		ld a, [rRP]
-; 		xor RPF_WRITE_HI
-; 		ld [rRP], a
-; 	.no_button_a
-
-; 	bit PADB_B, b
-; 	jr z, .no_button_b
-		
-; 	.no_button_b
-
-; 	; ld a, b
-; 	; and PADF_RIGHT | PADF_LEFT | PADF_UP | PADF_DOWN
-; 	; push bc
-; 	; call nz, scroll_screen
-; 	; pop bc
-
-; 	; bit PADB_A, b
-; 	; push bc
-; 	; call nz, clear_screen
-; 	; pop bc
-
-; 	; bit PADB_B, b
-; 	; jr z, .no_button_b
-; 	; 	ld a, 1
-; 	; 	ld [FRAME_REDRAW], a
-; 	; 	;push bc
-; 	; 	;call nz, clear_screen_tiles_vram
-; 	; 	;pop bc
-; 	; .no_button_b
-
-; 	; bit PADB_SELECT, b
-; 	; jr z, .no_button_select
-; 	; 	ld a, [rKEY1]
-; 	; 	xor %00000001
-; 	; 	ld [rKEY1], a
-; 	; 	stop 
-; 	; .no_button_select
-
-; 	; bit PADB_START, b
-; 	; jr z, .no_button_start
-; 	; 	ld a, SCRN_OX
-; 	; 	ld [rSCX], a
-; 	; 	ld a, SCRN_OY
-; 	; 	ld [rSCY], a
-; 	; 	push bc
-; 	; 	call clear_screen
-; 	; 	pop bc
-; 	; .no_button_start
-
-; 	; temp / remove
-
-; 	; ld a, b
-; 	; and PADF_UP
-; 	; ld hl, BUTTON_UP_SCREEN_LOCATION + BUTTON_DOWN_UP_OFFSET
-; 	; swap a
-; 	; rra
-; 	; inc a
-; 	; ld [hl], a
-
-; 	; ld a, b
-; 	; and PADF_LEFT
-; 	; ld hl, BUTTON_LEFT_SCREEN_LOCATION + BUTTON_DOWN_UP_OFFSET
-; 	; swap a
-; 	; inc a
-; 	; ld [hl], a
-
-; 	; ld a, b
-; 	; and PADF_RIGHT
-; 	; ld hl, BUTTON_RIGHT_SCREEN_LOCATION + BUTTON_DOWN_UP_OFFSET
-; 	; swap a
-; 	; rla
-; 	; inc a
-; 	; ld [hl], a
-
-; 	; ld a, b
-; 	; and PADF_DOWN
-; 	; ld hl, BUTTON_DOWN_SCREEN_LOCATION + BUTTON_DOWN_UP_OFFSET
-; 	; swap a
-; 	; rra
-; 	; rra
-; 	; inc a
-; 	; ld [hl], a
-
-
-; 	; ld a, b
-; 	; and PADF_SELECT
-; 	; ld hl, BUTTON_SELECT_SCREEN_LOCATION + BUTTON_DOWN_UP_OFFSET
-; 	; rra
-; 	; inc a
-; 	; ld [hl], a
-
-; 	; ld a, b
-; 	; and PADF_START
-; 	; ld hl, BUTTON_START_SCREEN_LOCATION + BUTTON_DOWN_UP_OFFSET
-; 	; rra
-; 	; rra
-; 	; inc a
-; 	; ld [hl], a
-
-; 	; ld a, b
-; 	; and PADF_A
-; 	; ld hl, BUTTON_A_SCREEN_LOCATION + BUTTON_DOWN_UP_OFFSET
-; 	; rla
-; 	; inc a
-; 	; ld [hl], a
-
-; 	; ld a, b
-; 	; and PADF_B
-; 	; ld hl, BUTTON_B_SCREEN_LOCATION + BUTTON_DOWN_UP_OFFSET
-; 	; inc a
-; 	; ld [hl], a
-
-; 	;
-
-; 	ret
-; on_button_down
-
-; on_button_held : buttons that are held this read
-;
-; input
-; - b  : buttons
-; on_button_held:
-
-; 	;
-
-; 	; ld a, b
-; 	; and PADF_UP
-; 	; ld hl, BUTTON_UP_SCREEN_LOCATION
-; 	; swap a
-; 	; rra
-; 	; inc a
-; 	; ld [hl], a
-	
-; 	; ld hl, BUTTON_UP_SCREEN_LOCATION + BUTTON_REPEAT_OFFSET
-; 	; ld a, 1
-; 	; ld [hl], a
-
-; 	; ld a, b
-; 	; and PADF_LEFT
-; 	; ld hl, BUTTON_LEFT_SCREEN_LOCATION
-; 	; swap a
-; 	; inc a
-; 	; ld [hl], a
-	
-; 	; ld hl, BUTTON_LEFT_SCREEN_LOCATION + BUTTON_REPEAT_OFFSET
-; 	; ld a, 1
-; 	; ld [hl], a
-
-; 	; ld a, b
-; 	; and PADF_RIGHT
-; 	; ld hl, BUTTON_RIGHT_SCREEN_LOCATION
-; 	; swap a
-; 	; rla
-; 	; inc a
-; 	; ld [hl], a
-	
-; 	; ld hl, BUTTON_RIGHT_SCREEN_LOCATION + BUTTON_REPEAT_OFFSET
-; 	; ld a, 1
-; 	; ld [hl], a
-
-; 	; ld a, b
-; 	; and PADF_DOWN
-; 	; ld hl, BUTTON_DOWN_SCREEN_LOCATION
-; 	; swap a
-; 	; rra
-; 	; rra
-; 	; inc a
-; 	; ld [hl], a
-	
-; 	; ld hl, BUTTON_DOWN_SCREEN_LOCATION + BUTTON_REPEAT_OFFSET
-; 	; ld a, 1
-; 	; ld [hl], a
-
-
-; 	; ld a, b
-; 	; and PADF_SELECT
-; 	; ld hl, BUTTON_SELECT_SCREEN_LOCATION
-; 	; rra
-; 	; inc a
-; 	; ld [hl], a
-	
-; 	; ld hl, BUTTON_SELECT_SCREEN_LOCATION + BUTTON_REPEAT_OFFSET
-; 	; ld a, 1
-; 	; ld [hl], a
-
-; 	; ld a, b
-; 	; and PADF_START
-; 	; ld hl, BUTTON_START_SCREEN_LOCATION
-; 	; rra
-; 	; rra
-; 	; inc a
-; 	; ld [hl], a
-	
-; 	; ld hl, BUTTON_START_SCREEN_LOCATION + BUTTON_REPEAT_OFFSET
-; 	; ld a, 1
-; 	; ld [hl], a
-
-; 	; ld a, b
-; 	; and PADF_A
-; 	; ld hl, BUTTON_A_SCREEN_LOCATION
-; 	; rla
-; 	; inc a
-; 	; ld [hl], a
-	
-; 	; ld hl, BUTTON_A_SCREEN_LOCATION + BUTTON_REPEAT_OFFSET
-; 	; ld a, 1
-; 	; ld [hl], a
-
-; 	; ld a, b
-; 	; and PADF_B
-; 	; ld hl, BUTTON_B_SCREEN_LOCATION
-; 	; inc a
-; 	; ld [hl], a
-	
-; 	; ld hl, BUTTON_B_SCREEN_LOCATION + BUTTON_REPEAT_OFFSET
-; 	; ld a, 1
-; 	; ld [hl], a
-	
-; 	;
-
-; 	ret
-; on_button_held
-
-; on_button_repeat : buttons that are held for a longer amount of time and thus repeated
-;
-; input
-; - b  : buttons
-; on_button_repeat:
-
-; 	; ld a, b
-; 	; and PADF_RIGHT | PADF_LEFT | PADF_UP | PADF_DOWN
-; 	; call nz, scroll_screen
-	
-; 	; temp / remove
-
-; 	; ld a, b
-; 	; and PADF_UP
-; 	; ld hl, BUTTON_UP_SCREEN_LOCATION + BUTTON_REPEAT_OFFSET
-; 	; swap a
-; 	; rra
-; 	; inc a
-; 	; ld [hl], a
-
-; 	; ld a, b
-; 	; and PADF_LEFT
-; 	; ld hl, BUTTON_LEFT_SCREEN_LOCATION + BUTTON_REPEAT_OFFSET
-; 	; swap a
-; 	; inc a
-; 	; ld [hl], a
-
-; 	; ld a, b
-; 	; and PADF_RIGHT
-; 	; ld hl, BUTTON_RIGHT_SCREEN_LOCATION + BUTTON_REPEAT_OFFSET
-; 	; swap a
-; 	; rla
-; 	; inc a
-; 	; ld [hl], a
-
-; 	; ld a, b
-; 	; and PADF_DOWN
-; 	; ld hl, BUTTON_DOWN_SCREEN_LOCATION + BUTTON_REPEAT_OFFSET
-; 	; swap a
-; 	; rra
-; 	; rra
-; 	; inc a
-; 	; ld [hl], a
-
-
-; 	; ld a, b
-; 	; and PADF_SELECT
-; 	; ld hl, BUTTON_SELECT_SCREEN_LOCATION + BUTTON_REPEAT_OFFSET
-; 	; rra
-; 	; inc a
-; 	; ld [hl], a
-
-; 	; ld a, b
-; 	; and PADF_START
-; 	; ld hl, BUTTON_START_SCREEN_LOCATION + BUTTON_REPEAT_OFFSET
-; 	; rra
-; 	; rra
-; 	; inc a
-; 	; ld [hl], a
-
-; 	; ld a, b
-; 	; and PADF_A
-; 	; ld hl, BUTTON_A_SCREEN_LOCATION + BUTTON_REPEAT_OFFSET
-; 	; rla
-; 	; inc a
-; 	; ld [hl], a
-
-; 	; ld a, b
-; 	; and PADF_B
-; 	; ld hl, BUTTON_B_SCREEN_LOCATION + BUTTON_REPEAT_OFFSET
-; 	; inc a
-; 	; ld [hl], a
-
-; 	;
-
-; 	ret
-; on_button_repeat
-
-; on_button_up : buttons that are not held this read but are in the last
-;
-; input
-; - b  : buttons
-; on_button_up:
-; 	; bit PADB_A, b
-; 	; jr z, .no_button_a
-; 	; 	ld a, RPF_WRITE_LO
-; 	; 	ld [rRP], a
-; 	; .no_button_a
-
-; 	ret
-; on_button_up
 
 ; check_input
 ;
-; destroys af, bc, de, hl
+; destroys `af`, `bc`, `de`, `hl`
 check_input:
-	ld a, [joypad_state]
-	ld l, a
 	ld a, [joypad_state_old]
 	ld h, a
+	ld a, [joypad_state]
+	ld l, a
 
-;if def(on_button_held)
+	or a
+	ld b, a
 	push hl
-
-	ld b, l
-	call on_button_held
-
-	;ld a, l
-	;or a
-	;ld b, a
-	;call nz, on_button_held
-
+	call nz, on_button_held
 	pop hl
-;endc
-;if def(on_button_down)
-	push hl
-	;ld hl, [sp]
-
+	
 	ld a, h
 	xor l ; changed button states
 	and l ; only button down states
+	jp z, .skip_button_down
+		ld b, a
+		ld a, [frame_count]
+		ld d, a
 
-	ld b, a
-	call nz, on_button_down
-	pop hl
-;endc
-;if def(on_button_repeat)
-	push hl
-	;ld hl, [sp]
+		macro SET_BUTTON_DELAY
+			bit \1, b
+			jr z, .no_button_delay\@
+				ld a, d
+				add BUTTON_REPEAT_DELAY
+				ld [\2], a
+			.no_button_delay\@
+		endm
 
-	ld d, d
+		SET_BUTTON_DELAY PADB_UP, 		button_up_repeat_next_frame
+		SET_BUTTON_DELAY PADB_LEFT, 	button_left_repeat_next_frame
+		SET_BUTTON_DELAY PADB_RIGHT, 	button_right_repeat_next_frame
+		SET_BUTTON_DELAY PADB_DOWN, 	button_down_repeat_next_frame
+		SET_BUTTON_DELAY PADB_SELECT, 	button_select_repeat_next_frame
+		SET_BUTTON_DELAY PADB_START, 	button_start_repeat_next_frame
+		SET_BUTTON_DELAY PADB_A, 		button_a_repeat_next_frame
+		SET_BUTTON_DELAY PADB_B, 		button_b_repeat_next_frame
 
+		push hl
+		call on_button_down
+		pop hl
+	.skip_button_down
+	
 	ld a, l
 	and h ; only button held states
 	jp z, .skip_button_repeat
-
+		ld b, 0
+		ld c, a
 		ld a, [frame_count]
 		ld d, a
-		ld b, 0
 
-		bit PADB_UP, l
-		jr z, .skip_button_up
-			;ld a, d ; unnecessary 
-			and BUTTON_UP_FRAME_MASK
-			ld e, a
-			ld a, [button_up_frame_down]
-			cp e
-		jr nz, .skip_button_up
-			set PADB_UP, b
-		.skip_button_up
+		macro SET_BUTTON_REPEAT
+			bit \1, c
+			jr z, .no_button_repeat\@
+				ld a, [\2]
+				cp d
+				jr nz, .no_button_repeat\@
+					set \1, b
+					; ld a, d ; unnecessary
+					add BUTTON_REPEAT_RATE
+					ld [\2], a
+			.no_button_repeat\@
+		endm
 
-		bit PADB_LEFT, l
-		jr z, .skip_button_left
-			ld a, d
-			and BUTTON_LEFT_FRAME_MASK
-			ld e, a
-			ld a, [button_left_frame_down]
-			cp e
-		jr nz, .skip_button_left
-			set PADB_LEFT, b
-		.skip_button_left
+		SET_BUTTON_REPEAT PADB_UP, 		button_up_repeat_next_frame
+		SET_BUTTON_REPEAT PADB_LEFT, 	button_left_repeat_next_frame
+		SET_BUTTON_REPEAT PADB_RIGHT, 	button_right_repeat_next_frame
+		SET_BUTTON_REPEAT PADB_DOWN, 	button_down_repeat_next_frame
+		SET_BUTTON_REPEAT PADB_SELECT, 	button_select_repeat_next_frame
+		SET_BUTTON_REPEAT PADB_START, 	button_start_repeat_next_frame
+		SET_BUTTON_REPEAT PADB_A, 		button_a_repeat_next_frame
+		SET_BUTTON_REPEAT PADB_B, 		button_b_repeat_next_frame
 
-		bit PADB_RIGHT, l
-		jr z, .skip_button_right
-			ld a, d
-			and BUTTON_RIGHT_FRAME_MASK
-			ld e, a
-			ld a, [button_right_frame_down]
-			cp e
-		jr nz, .skip_button_right
-			set PADB_RIGHT, b
-		.skip_button_right
-
-		bit PADB_DOWN, l
-		jr z, .skip_button_down
-			ld a, d
-			and BUTTON_DOWN_FRAME_MASK
-			ld e, a
-			ld a, [button_down_frame_down]
-			cp e
-		jr nz, .skip_button_down
-			set PADB_DOWN, b
-		.skip_button_down
-
-
-		bit PADB_SELECT, l
-		jr z, .skip_button_select
-			ld a, d
-			and BUTTON_SELECT_FRAME_MASK
-			ld e, a
-			ld a, [button_select_frame_down]
-			cp e
-		jr nz, .skip_button_select
-			set PADB_SELECT, b
-		.skip_button_select
-
-		bit PADB_START, l
-		jr z, .skip_button_start
-			ld a, d
-			and BUTTON_START_FRAME_MASK
-			ld e, a
-			ld a, [button_start_frame_down]
-			cp e
-		jr nz, .skip_button_start
-			set PADB_START, b
-		.skip_button_start
-
-		bit PADB_A, l
-		jr z, .skip_button_a
-			ld a, d
-			and BUTTON_A_FRAME_MASK
-			ld e, a
-			ld a, [button_a_frame_down]
-			cp e
-		jr nz, .skip_button_a
-			set PADB_A, b
-		.skip_button_a
-
-		bit PADB_B, l
-		jr z, .skip_button_b
-			ld a, d
-			and BUTTON_B_FRAME_MASK
-			ld e, a
-			ld a, [button_b_frame_down]
-			cp e
-		jr nz, .skip_button_b
-			set PADB_B, b
-		.skip_button_b
-		
 		xor a
 		cp b
+		push hl
 		call nz, on_button_repeat
-
+		pop hl
 	.skip_button_repeat
-	;
 	
-	;
-	pop hl
-	;ld hl, [sp]
-;endc
-;if def(on_button_up)
 	ld a, l
 	xor h ; changed button states
 	and h ; only button up states
-	
 	ld b, a
-	call nz, on_button_up
-;endc
+	jp nz, on_button_up
+	
 	ret
 ; check_input
