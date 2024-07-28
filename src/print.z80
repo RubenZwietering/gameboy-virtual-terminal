@@ -7,6 +7,7 @@ export print_bits
 export _print_string
 export print_string
 export _vprintf
+export vprintf
 export _printf
 
 section "print functions", ROMX
@@ -344,7 +345,7 @@ print_string:
 ; _vprintf
 ;
 ; c function signiature:
-; int printf(const char*, va_list);
+; int vprintf(const char*, va_list);
 ;
 ; input:
 ; - `de` : fmt string ptr
@@ -355,14 +356,23 @@ print_string:
 ;
 ; destroys `af`, `bc`, `de`, `hl`
 _vprintf:
-	ld h, d
-	ld l, e
+	LD_R16_R16 hl, de
 
-	.loop
+; vprintf
+;
+; input:
+; - `hl` : fmt string ptr
+; - `bc` : variable arguments list ptr
+;
+; returns:
+; - `bc` : TODO: number of characters written
+;
+; destroys `af`, `bc`, `de`, `hl`
+vprintf:
 	ld a, [hli]
 
-	or a
-	ret z ; , .exit
+	or a ; cp "\0"
+	ret z
 	
 	cp "%"
 	jr z, .fmt_specifier
@@ -372,24 +382,102 @@ _vprintf:
 	call putchar
 	pop bc
 	pop hl
-	jr .loop
+	jr vprintf
 	
 	.fmt_specifier
-	ld a, [hli]
+		ld a, [hli]
 
-	or a
-	ret z ; , .exit
+		or a ; cp "\0"
+		ret z
 
-	cp "0"
-	jr z, .fmt_specifier ; 0 Padding is not supported, ignore
+		; introductory % character
+		; behaviour flags
+		; minimum field width specfier
+		; . precision specifier
+		; length modifier
+		; conversion format specifier
 
-	sub "1"
-	cp 9
-	jr c, .fmt_specifier ; Width Specifier is not supported, ignore 1 digit worth
-	add "1"
+		cp "-"
+		jp z, .flag_left_justified
+		cp "+"
+		jp z, .flag_sign_prepended
+		cp " "
+		jp z, .flag_space
+		cp "#"
+		jp z, .flag_alternative_form
 
-	cp "s"
-	jr nz, .not_s
+		sub "0"
+		jp z, .flag_leading_zeros
+		cp 10
+		jr c, .minimum_field_width_specifier 
+		add "0"
+
+		cp "."
+		jp z, .precision_specifier
+
+		; length modifiers: hh, h, l, ll, j, z, t, L
+
+		cp "c"
+		jp z, .conversion_c
+		cp "s"
+		jp z, .conversion_s
+		cp "d"
+		jp z, .conversion_i
+		cp "i"
+		jp z, .conversion_i
+		cp "o"
+		jp z, .conversion_o
+		cp "x"
+		jp z, .conversion_x_lower
+		cp "X"
+		jp z, .conversion_x_upper
+
+		cp "u"
+		jp z, .conversion_u
+		cp "b"
+		jp z, .conversion_b
+
+		push hl
+		push bc
+		call putchar
+		pop bc
+		pop hl
+		jp vprintf
+
+	.flag_left_justified
+		jp vprintf
+	.flag_sign_prepended
+		jp vprintf
+	.flag_space
+		jp vprintf
+	.flag_alternative_form
+		jp vprintf
+	.flag_leading_zeros
+		jp vprintf
+
+	.minimum_field_width_specifier 
+		; minimum field with specifier not supported yet
+		jp vprintf
+
+	.precision_specifier
+
+		jp vprintf
+
+	.conversion_c
+		push hl
+		
+		ld a, [bc]
+		inc bc
+		inc bc
+		
+		push bc
+		call putchar
+		pop bc
+
+		pop hl
+		jp vprintf
+
+	.conversion_s
 		push hl
 
 		ld a, [bc]
@@ -404,71 +492,9 @@ _vprintf:
 		pop bc
 
 		pop hl
-		jr .loop
-	.not_s
+		jp vprintf
 
-	cp "x"
-	jr nz, .not_x
-		push hl
-
-		ld a, [bc]
-		ld e, a
-		inc bc
-		ld a, [bc]
-		ld d, a
-		inc bc
-
-		push bc
-
-		call print_hex
-
-		pop bc
-
-		pop hl
-		jr .loop
-	.not_x
-	
-	cp "c"
-	jr nz, .not_c
-		push hl
-		
-		ld a, [bc]
-		inc bc
-		inc bc
-		
-		push bc
-		call putchar
-		pop bc
-
-		pop hl
-		jr .loop 
-	.not_c
-
-	cp "u"
-	jr nz, .not_u
-		push hl
-
-		ld a, [bc]
-		ld e, a
-		inc bc
-		ld a, [bc]
-		ld d, a
-		inc bc
-		
-		push bc
-
-		call _bcd
-
-		call print_hexl
-
-		pop bc
-
-		pop hl
-		jp .loop 
-	.not_u
-
-	cp "d"
-	jr nz, .not_d
+	.conversion_i
 		push hl
 
 		ld a, [bc]
@@ -497,11 +523,72 @@ _vprintf:
 		pop bc
 
 		pop hl
-		jp .loop 
-	.not_d
+		jp vprintf 
+	
+	.conversion_o
+		jp vprintf
+	
+	.conversion_x_lower
+		push hl
 
-	cp "b"
-	jr nz, .not_b
+		ld a, [bc]
+		ld e, a
+		inc bc
+		ld a, [bc]
+		ld d, a
+		inc bc
+
+		push bc
+
+		call print_hex
+
+		pop bc
+
+		pop hl
+		jp vprintf
+	
+	.conversion_x_upper
+		push hl
+
+		ld a, [bc]
+		ld e, a
+		inc bc
+		ld a, [bc]
+		ld d, a
+		inc bc
+
+		push bc
+
+		call print_hex
+
+		pop bc
+
+		pop hl
+		jp vprintf
+		
+	.conversion_u
+		push hl
+
+		ld a, [bc]
+		ld e, a
+		inc bc
+		ld a, [bc]
+		ld d, a
+		inc bc
+		
+		push bc
+
+		call _bcd
+
+		call print_hexl
+
+		pop bc
+
+		pop hl
+		jp vprintf
+
+	
+	.conversion_b
 		push hl
 
 		ld a, [bc]
@@ -526,7 +613,7 @@ _vprintf:
 			pop bc
 
 			pop hl
-			jp .loop
+			jp vprintf
 		.ignore_upper_bits
 	
 		ld a, e
@@ -535,15 +622,8 @@ _vprintf:
 		pop bc
 
 		pop hl
-		jp .loop
-	.not_b
-
-	push hl
-	push bc
-	call putchar
-	pop bc
-	pop hl
-	jp .loop
+		jp vprintf
+; vprintf
 ; _vprintf
 
 
@@ -561,8 +641,7 @@ _vprintf:
 ; destroys `af`, `bc`, `de`, `hl`
 _printf:
 	ld	hl, sp+4 ; variable arguments list ptr
-	ld	c, l
-	ld	b, h
+	LD_R16_R16 bc, hl
 	
 	ld	hl, sp+2 ; format string ptr ptr
 	ld	e, [hl]
