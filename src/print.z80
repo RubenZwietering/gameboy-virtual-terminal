@@ -445,23 +445,23 @@ vprintf:
 		jp vprintf
 
 	.flag_left_justified
-		jp vprintf
+		jp .fmt_specifier
 	.flag_sign_prepended
-		jp vprintf
+		jp .fmt_specifier
 	.flag_space
-		jp vprintf
+		jp .fmt_specifier
 	.flag_alternative_form
-		jp vprintf
+		jp .fmt_specifier
 	.flag_leading_zeros
-		jp vprintf
+		jp .fmt_specifier
 
 	.minimum_field_width_specifier 
 		; minimum field with specifier not supported yet
-		jp vprintf
+		jp .fmt_specifier
 
 	.precision_specifier
 
-		jp vprintf
+		jp .fmt_specifier
 
 	.conversion_c
 		push hl
