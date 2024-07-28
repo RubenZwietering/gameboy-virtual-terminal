@@ -20,10 +20,10 @@ export _putchar
 export putchar
 export _puts
 export puts
-export _printb
-export printb
-export _prints
-export prints
+export _print_byte
+export print_byte
+export _print_string
+export print_string
 export _vprintf
 export _printf
 
@@ -460,7 +460,7 @@ _puts:
 ;
 ; destroys `af`, `bc`, `de`, `hl`
 puts:
-	call prints
+	call print_string
 
 	ld a, "\n"
 	jp putchar
@@ -468,13 +468,13 @@ puts:
 ; _puts
 
 
-; _printb
+; _print_byte
 ; 
 ; description:
 ; print a byte
 ; 
 ; c function signiature:
-; int printb(unsigned char);
+; int print_byte(unsigned char);
 ;
 ; input:
 ; - `a` : value
@@ -483,10 +483,10 @@ puts:
 ; - `bc` : number of characters written
 ;
 ; destroys `af`, `bc`, `de`, `hl`
-_printb:
+_print_byte:
 	; fallthrough
 
-; printb
+; print_byte
 ;
 ; input:
 ; - `a` : value
@@ -495,7 +495,7 @@ _printb:
 ; - `bc` : number of characters written
 ;
 ; destroys `af`, `bc`, `de`, `hl`
-printb:
+print_byte:
 	ld c, $0f
 	ld h, HIGH(hex_map)
 	ld b, a
@@ -519,8 +519,9 @@ printb:
 
 	ld bc, 2
 	ret
-; printb
-; _printb
+; print_byte
+; _print_byte
+
 
 ; print_non_zero_nibbles
 ; 
@@ -562,14 +563,14 @@ print_non_zero_nibbles:
 	ret
 ; print_non_zero_nibbles
 
-; _printhex
+; _print_hex
 ; 
 ; description:
 ; print a hexadecimal integer,
 ; zero nibbles are ignored unless it is the lowest one
 ;
 ; c function signiature:
-; int printhex(unsigned int);
+; int print_hex(unsigned int);
 ;
 ; input:
 ; - `de` : value
@@ -578,10 +579,10 @@ print_non_zero_nibbles:
 ; - `bc` : number of characters written
 ;
 ; destroys `af`, `bc`, `de`, `hl`
-_printhex:
+_print_hex:
 	; fallthrough
 
-; printhex
+; print_hex
 ;
 ; input:
 ; - `de` : value
@@ -590,7 +591,7 @@ _printhex:
 ; - `bc` : number of characters written
 ;
 ; destroys `af`, `bc`, `de`, `hl`
-printhex:
+print_hex:
 	ld a, d
 	or a
 	jr z, .ignore_upper_bits
@@ -599,7 +600,7 @@ printhex:
 		pop de
 
 		ld a, e
-		call printb
+		call print_byte
 
 		; TODO: return correct number of characters written
 		ld bc, 3 ; or 4
@@ -612,17 +613,18 @@ printhex:
 	; TODO: return correct number of characters written
 	ld bc, 1 ; or 2
 	ret
-; printhex
-; _printhex
+; print_hex
+; _print_hex
 
-; _printhexl
+
+; _print_hexl
 ; 
 ; description:
 ; print a hexadecimal long integer,
 ; zero nibbles are ignored unless it is the lowest one
 ;
 ; c function signiature:
-; int printhexl(unsigned long);
+; int print_hexl(unsigned long);
 ;
 ; input:
 ; - `debc` : value
@@ -631,10 +633,10 @@ printhex:
 ; - `bc` : number of characters written
 ;
 ; destroys `af`, `bc`, `de`, `hl`
-_printhexl:
+_print_hexl:
 	; fallthrough
 
-; printhexl
+; print_hexl
 ;
 ; input:
 ; - `debc` : value
@@ -643,15 +645,15 @@ _printhexl:
 ; - `bc` : number of characters written
 ;
 ; destroys `af`, `bc`, `de`, `hl`
-printhexl:
+print_hexl:
 	ld a, d
 	or e
 	jr z, .ignore_upper_bits
 		push bc
-		call printhex
+		call print_hex
 		pop de
 
-		call printhex
+		call print_hex
 
 		; TODO: return correct number of characters written
 		ld bc, 5 ; to 8
@@ -660,15 +662,15 @@ printhexl:
 
 	ld d, b
 	ld e, c
-	jp printhex
-; printhexl
-; _printhexl
+	jp print_hex
+; print_hexl
+; _print_hexl
 
 
-; _prints
+; _print_string
 ;
 ; c function signiature:
-; int prints(const char*);
+; int print_string(const char*);
 ;
 ; input:
 ; - `de` : string ptr
@@ -677,11 +679,11 @@ printhexl:
 ; - `bc` : TODO: number of characters written
 ;
 ; destroys `af`, `bc`, `de`, `hl`
-_prints:
+_print_string:
 	LD_R16_R16 hl, de
 	; fallthrough
 
-; prints
+; print_string
 ;
 ; input:
 ; - `hl` : string ptr
@@ -690,7 +692,7 @@ _prints:
 ; - `bc` : TODO: number of characters written
 ;
 ; destroys `af`, `bc`, `de`, `hl`
-prints:
+print_string:
 	ld a, [hli]
 	or a
 	ret z
@@ -698,9 +700,9 @@ prints:
 	push hl
 	call putchar
 	pop hl
-	jr prints
-; prints
-; _prints
+	jr print_string
+; print_string
+; _print_string
 
 
 ; _vprintf
@@ -762,7 +764,7 @@ _vprintf:
 		inc bc
 		
 		push bc
-		call prints
+		call print_string
 		pop bc
 
 		pop hl
@@ -782,7 +784,7 @@ _vprintf:
 
 		push bc
 
-		call printhex
+		call print_hex
 
 		pop bc
 
@@ -821,7 +823,7 @@ _vprintf:
 
 		call _bcd
 
-		call printhexl
+		call print_hexl
 
 		pop bc
 
@@ -854,7 +856,7 @@ _vprintf:
 
 		call _bcd
 
-		call printhexl
+		call print_hexl
 
 		pop bc
 
