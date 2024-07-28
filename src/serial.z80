@@ -10,12 +10,9 @@ serial_interrupt_handler:
 	push af
 	
 	ld a, [rSB]
-	cp $ff
-	jr z, .ignore_input
-		push hl
-		INPUT_BUFFER_PUSH
-		pop hl
-	.ignore_input
+	push hl
+	INPUT_BUFFER_PUSH
+	pop hl
 
 	ld a, SCF_START
 	ld [rSC], a
