@@ -54,6 +54,49 @@ macro PRINTF
 			 || strcmp(strlwr("\1"), "l") == 0)
 				ld h, 0
 				ld l, \1
+			elif strlen("\1") == 1  && strcmp(strlwr("\1"), "f") == 0
+				push af
+				pop hl
+				ld h, 0
+			elif strlen("\1") == 2 && strcmp(strlwr("\1"), "sp") == 0
+				push af
+				ld hl, sp + (_NARG * 2)
+				pop af
+			elif strlen("\1") == 2 && strcmp(strlwr("\1"), "zf") == 0
+				; bit 7
+				ld hl, 1
+				jr z, .flag_set\@
+					ld l, 0
+				.flag_set\@
+			elif strlen("\1") == 2 && strcmp(strlwr("\1"), "nf") == 0
+				; bit 6
+				push af
+				ld hl, sp+0
+				ld a, [hl]
+				rra ; bit 5
+				rra ; bit 4
+				swap a ; bit 1
+				and 1
+				ld h, 0
+				ld l, a
+				pop af
+			elif strlen("\1") == 2 && strcmp(strlwr("\1"), "hf") == 0
+				; bit 5
+				push af
+				ld hl, sp+0
+				ld a, [hl]
+				rra ; bit 4
+				swap a ; bit 1
+				and 1
+				ld h, 0
+				ld l, a
+				pop af
+			elif strlen("\1") == 2 && strcmp(strlwr("\1"), "cf") == 0
+				; bit 4
+				ld hl, 1
+				jr c, .flag_set\@
+					ld l, 0
+				.flag_set\@
 			elif strin("\1", "\"") != 0
 				LD_STRING hl, \1
 			else
