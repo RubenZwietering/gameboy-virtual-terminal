@@ -1,0 +1,3 @@
+[submodule "wozmon.z80"]
+	path = wozmon.z80
+	url = https://github.com/RubenZwietering/wozmon.z80
