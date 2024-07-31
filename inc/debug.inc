@@ -67,4 +67,32 @@ macro DPUTS
 endm
 ; DPUTS
 
+
+; DPUTSJP
+; ---
+;
+; A jump to DPUTS and back, in case space is tight.
+;
+; ---
+; parameters: see DPUTS
+; 
+; ---
+; modifies: none
+macro DPUTSJP
+	if def(DEBUG)
+
+	pushs
+	section "__debug_puts_jp\@ function", romx
+		__debug_puts_jp_to_function\@:
+		DPUTS \#
+		jp :+ 							; return from function
+	pops
+
+	jp __debug_puts_jp_to_function\@ 	; no call so stack pointer stays intact
+	:
+
+	endc
+endm
+; DPUTSJP
+
 endc ; DEBUG_INC
