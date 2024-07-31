@@ -15,6 +15,26 @@ endm
 ; WAIT_BLANK
 
 
+; STRING
+; 
+; arguments:
+; - 1 : string name
+; - 2 : string constant
+; 
+; destroys `af`, `bc`, `de`, `hl`
+macro STRING
+	static_assert fatal, !(_NARG < 2), "Too few arguments to STRING"
+	static_assert fatal, !(_NARG > 2), "Too many arguments to STRING"
+
+	pushs
+	section "__inline_str_\1\@ section", ROMX
+	\1:
+		db \2, 0
+	pops
+endm
+; STRING
+
+
 ; LD_STRING
 ; 
 ; arguments:
