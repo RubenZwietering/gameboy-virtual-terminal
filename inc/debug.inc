@@ -1,6 +1,8 @@
 if !def(DEBUG_INC)
 def DEBUG_INC equ 1
 
+include "memory.inc"
+
 ; BREAKPOINT
 ; ---
 ;
@@ -25,8 +27,8 @@ endm
 ;
 ; ---
 ; parameters:
-; - 1 : string to print or address to a null terminated string if there is 2 arguments
-; - 2 : bank number of the string pointer in the first argument
+; - 1 : string constant or address to a null terminated string
+; - 2 : optional bank number for/of the string
 ; ---
 ; modifies: none
 macro DPUTS
@@ -35,18 +37,31 @@ macro DPUTS
 	if def(DEBUG)
 
 	ld d, d
-	jr .no_debug_puts\@
+	jr .__debug_puts_jr_over_data\@
 		dw $6464
 
-		if _NARG == 1
-			dw $0000
-			db \1, 0			; string
-		elif _NARG == 2
+		if strin("\1", "\"") != 0		; check if string constant
+			if _NARG == 1
+				dw $0000
+				db \1, 0 				; string
+			elif _NARG == 2
+				dw $0001
+				STRING __debug_puts_str\@, \1
+				dw __debug_puts_str\@ 	; address to null terminated string
+				dw \2 					; bank
+			endc
+		else
 			dw $0001
-			dw \1					; address to null terminated string
-			dw \2					; bank
+			if _NARG == 1
+				dw \1					; address to null terminated string
+				dw bank(\1) 			; bank
+			elif _NARG == 2
+				dw \1					; address to null terminated string
+				dw \2					; bank
+			endc
 		endc
-	.no_debug_puts\@
+
+	.__debug_puts_jr_over_data\@
 
 	endc
 endm
