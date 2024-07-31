@@ -1,0 +1,134 @@
+include "macros.inc"
+include "wozmon.inc"
+
+section "wozmon io functions", romx
+if def(WOZMON_OPTIMIZED)
+chrin:
+	push bc
+	push hl
+	call getchar
+	ld c, a
+	call cursor_reset_blink
+	ld a, c
+	pop hl
+	pop bc
+
+	cp $80
+	jr nc, chrin
+	cp "\r"
+	jr z, .lf
+	cp $1b
+	ret z
+	cp "\n"
+	ret z
+	cp $08
+	ret z
+	cp $7f
+	jr z, .bs
+	cp " "
+	jr c, chrin
+	cp "a"
+	ret c
+	cp "z"+1
+	ret nc
+	sub "a"-"A"
+	ret
+
+	.lf
+		ld a, "\n"
+		ret
+	.bs
+		ld a, $08
+		ret
+
+chrout:
+	push bc
+	push de
+	push hl
+	cp $08 ; "\b"
+	jr z, .bs
+	.putchar
+	call putchar
+	pop hl
+	pop de
+	pop bc
+	ret
+
+	.bs
+		ld a, $08 ; "\b"
+		call putchar
+		ld a, " "
+		call putchar
+		ld a, $08
+		jr .putchar
+
+
+def WOZMON_CHROUT_MODIFIES_A equ 1
+def WOZMON_HRAM_ONLY equ 1
+include "wozmon.z80/optimized/wozmon.z80"
+endc
+
+if def(WOZMON_ORIGINAL)
+CHRIN:
+	push bc
+	push hl
+	call getchar
+	ld c, a
+	call cursor_reset_blink
+	ld a, c
+	pop hl
+	pop bc
+
+	add $80
+	jr c, CHRIN
+	cp "\r"+$80
+	ret z
+	cp $1b+80
+	ret z
+	cp "\n"+$80
+	jr z, .lf
+	cp $08+$80
+	jr z, .bs
+	cp $7f+$80
+	jr z, .bs
+	cp " "+$80
+	jr c, CHRIN
+	cp "a"+$80
+	ret c
+	cp "z"+$80+1
+	ret nc
+	sub "a"-"A"
+	ret
+
+	.lf
+		ld a, "\r"+$80
+		ret
+	.bs
+		ld a, "_"+$80
+		ret
+
+CHROUT:
+	PUSH_ALL
+	and $7f
+	cp "\r"
+	jr z, .lf
+	cp "_"
+	jr z, .bs
+	.putchar
+	call putchar
+	POP_ALL
+	ret
+
+	.lf
+		ld a, "\n"
+		jr .putchar
+	.bs
+		ld a, $08 ; "\b"
+		call putchar
+		ld a, " "
+		call putchar
+		ld a, $08
+		jr .putchar
+
+include "wozmon.z80/original/wozmon.z80"
+endc

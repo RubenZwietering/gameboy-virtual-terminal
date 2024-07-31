@@ -12,7 +12,7 @@ SDIR:=src
 
 # https://rgbds.gbdev.io/docs/master/rgbasm.1
 ASM:=rgbasm
-AFLAGS:=-Wall -I $(IDIR) -D DEBUG
+AFLAGS:=-Wall -I $(IDIR) -D DEBUG -D WOZMON_OPTIMIZED
 CC:=sdcc
 CFLAGS:=--std=c23 -msm83 --asm=rgbds -S
 LINK:=rgblink
@@ -75,6 +75,7 @@ ASRCS:=							\
 	serial.z80					\
 	start.z80					\
 	vblank.z80					\
+	wozmon.z80					\
 	# $(wildcard $(SDIR)/*.z80)
 CSRCS:=							\
 	main.c						\
