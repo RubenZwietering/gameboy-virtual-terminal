@@ -43,18 +43,11 @@ endm
 ; 
 ; destroys `af`, `bc`, `de`, `hl`
 macro LD_STRING
-static_assert fatal, !(_NARG < 2), "Too few arguments to LD_STRING"
-static_assert fatal, !(_NARG > 2), "Too many arguments to LD_STRING"
+	static_assert fatal, !(_NARG < 2), "Too few arguments to LD_STRING"
+	static_assert fatal, !(_NARG > 2), "Too many arguments to LD_STRING"
 
-pushs
-
-section "__inline_str\@ section", ROMX
-__inline_str\@:
-	db \2, 0
-
-pops
-
-ld \1, __inline_str\@
+	STRING __inline_str\@, \2
+	ld \1, __inline_str\@
 endm
 ; LD_STRING
 
