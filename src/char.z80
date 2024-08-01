@@ -298,9 +298,9 @@ _putchar:
 ;
 ; destroys `af`, `bc`, `de`, `hl`
 putchar:
-	cp " "
-	jr c, .special_character
-	cp $7f ; delete and above
+	cp " " 		; 0 to $1f
+	jr c, .control_code
+	cp $7f 		; delete and above
 	ret nc
 	
 	push af
@@ -342,13 +342,22 @@ putchar:
 
 
 
-	.special_character
-	or a	; cp "\0"
-	ret z
+	.control_code
+		or a		; cp "\0"
+		ret z
+		cp "\n"
+		jr z, .lf 	; line feed
+		cp "\r"
+		jr z, .cr 	; carriage return
+		cp $08 		; "\b"
+		jr z, .bs 	; backspace
+		cp "\t"
+		jr z, .ht 	; horizontal tab
+		cp $0b 		; "\v"
+		jr z, .vt 	; vertical tab
+		ret
 
-	cp "\n"
-	jr nz, .not_linefeed
-
+	.lf
 		xor a
 		ld [cursor_x], a
 
@@ -362,20 +371,14 @@ putchar:
 		ld [cursor_y], a
 
 		jp scroll_window_once
-	.not_linefeed
 
-	cp "\r"
-	jr nz, .not_carriagereturn
-
+	.cr
 		xor a
 		ld [cursor_x], a
 
 		ret
-	.not_carriagereturn
 
-	cp $08 ; "\b"
-	jr nz, .not_backspace
-
+	.bs
 		ld a, [cursor_x]
 		or a
 		ret z
@@ -384,11 +387,8 @@ putchar:
 		ld [cursor_x], a
 
 		ret
-	.not_backspace
 
-	cp "\t"
-	jr nz, .not_tab
-
+	.ht
 		ld a, [cursor_x]
 		cp SCRN_X_B - 1
 		ret z
@@ -408,11 +408,8 @@ putchar:
 		ld [cursor_x], a
 
 		ret
-	.not_tab
 
-	cp $0b ; "\v"
-	jr nz, .not_vtab
-
+	.vt
 		ld a, [cursor_y]
 		cp SCRN_Y_B
 		jp nc, scroll_window_once
@@ -421,9 +418,6 @@ putchar:
 		ld [cursor_y], a
 
 		ret
-	.not_vtab
-
-	ret
 ; putchar
 ; _putchar
 
