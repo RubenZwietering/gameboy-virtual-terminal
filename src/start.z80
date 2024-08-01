@@ -4,6 +4,7 @@ include "cursor.inc"
 include "char.inc"
 include "input.inc"
 include "debug.inc"
+include "wozmon.inc"
 
 export hex_map
 
@@ -192,6 +193,12 @@ soft_init:
 
 	ei
 	call _main
+
+	if def(WOZMON)
+		.wozmon
+		call WOZMON
+		jr .wozmon
+	endc
 
 	.getchar
 		call getchar
