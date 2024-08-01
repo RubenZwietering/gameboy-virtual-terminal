@@ -1,5 +1,7 @@
 include "memory.inc"
 
+export ld_hl_pc
+export ld_de_pc
 export memcpy
 export memset
 export memxor
@@ -8,6 +10,45 @@ export vmemset
 export vmemxor
 
 section "memory functions", ROMX
+; ld_hl_pc
+;
+; load current pc in hl at runtime.
+;
+; returns:
+; - `hl` : pc
+;
+; destroys `af`
+ld_hl_pc:
+	ld hl, sp+0
+	
+	; pop without changing sp
+	ldi a, [hl]
+	ld h, [hl]
+	ld l, a
+	
+	ret
+; ld_hl_pc
+
+
+; ld_de_pc
+;
+; load current pc in hl at runtime.
+;
+; returns:
+; - `de` : pc
+;
+; destroys `af`, `hl`
+ld_de_pc:
+	ld hl, sp+0
+	
+	; pop without changing sp
+	ldi a, [hl]
+	ld d, [hl]
+	ld e, a
+	
+	ret
+; ld_de_pc
+
 
 ; memcpy
 ;
