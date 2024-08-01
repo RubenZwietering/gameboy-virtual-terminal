@@ -13,6 +13,9 @@ export character_buffer_end
 
 export init_character_mem
 
+export character_update_table
+export character_update_table_end
+
 export _gotoxy
 export _getchar
 export getchar
@@ -29,6 +32,10 @@ character_buffer: 		ds SCRN_X_B * SCRN_VY_B
 character_buffer_end:
 def CHARACTER_BUFFER_SIZE equ character_buffer_end - character_buffer
 
+section "character output update table", WRAMX, ALIGN[8]
+character_update_table: 	ds SCRN_VY_B
+character_update_table_end:
+
 section "character functions", ROMX
 ; init_character_mem
 ; 
@@ -37,6 +44,9 @@ init_character_mem:
 	xor a
 	ld [character_window_offset], a
 
+	ld hl, character_update_table
+	ld bc, character_update_table_end - character_update_table
+	call memset
 
 	ld a, " "
 	ld hl, character_buffer
@@ -78,7 +88,10 @@ scroll_buffer_once:
 	ld bc, SCRN_X_B
 	call memset
 
-	jp cursor_reset_blink
+	ld a, 1
+	ld hl, character_update_table
+	ld bc, character_update_table_end - character_update_table
+	jp memset
 ; scroll_buffer_once
 
 
@@ -137,12 +150,22 @@ scroll_buffer:
 	; bc = a * SCRN_X_B
 
 	ld a, " "
+	call memset
+
+	ld a, 1
+	ld hl, character_update_table
+	ld bc, character_update_table_end - character_update_table
 	jp memset
 
 	.clear
 	ld a, " "
 	ld hl, character_buffer
 	ld bc, CHARACTER_BUFFER_SIZE
+	call memset
+
+	ld a, 1
+	ld hl, character_update_table
+	ld bc, character_update_table_end - character_update_table
 	jp memset
 ; scroll_buffer
 
@@ -188,7 +211,7 @@ scroll_window_once:
 
 	ld h, HIGH(character_update_table)
 	ld l, a
-	ld a, SCRN_X_B
+	ld a, 1
 	ld [hl], a
 	ret
 ; scroll_window_once
@@ -334,7 +357,21 @@ putchar:
 	
 	pop af
 	ld [hl], a
-	jr cursor_forward
+
+	ld a, [character_window_offset]
+	ld l, a
+	ld a, [cursor_y]
+	add l
+	cp SCRN_VY_B
+	jr c, .no_wrap
+		sub SCRN_VY_B
+	.no_wrap
+	ld h, HIGH(character_update_table)
+	ld l, a
+	ld a, 1
+	ld [hl], a
+
+	jp cursor_forward
 
 	.return_without_write
 	pop af
