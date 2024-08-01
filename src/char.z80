@@ -298,10 +298,10 @@ _putchar:
 ;
 ; destroys `af`, `bc`, `de`, `hl`
 putchar:
-	cp $20
+	cp " "
 	jr c, .special_character
-	cp $7f
-	ret nc ;, .delete_character
+	cp $7f ; delete and above
+	ret nc
 	
 	push af
 
@@ -343,10 +343,10 @@ putchar:
 
 
 	.special_character
-	cp $00
+	or a	; cp "\0"
 	ret z
 
-	cp $0a
+	cp "\n"
 	jr nz, .not_linefeed
 
 		xor a
@@ -364,7 +364,7 @@ putchar:
 		jp scroll_window_once
 	.not_linefeed
 
-	cp $0d
+	cp "\r"
 	jr nz, .not_carriagereturn
 
 		xor a
@@ -373,20 +373,20 @@ putchar:
 		ret
 	.not_carriagereturn
 
-	cp $08
+	cp $08 ; "\b"
 	jr nz, .not_backspace
 
 		ld a, [cursor_x]
-		dec a
-		cp $ff
+		or a
 		ret z
 
+		dec a
 		ld [cursor_x], a
 
 		ret
 	.not_backspace
 
-	cp $09
+	cp "\t"
 	jr nz, .not_tab
 
 		ld a, [cursor_x]
@@ -410,7 +410,7 @@ putchar:
 		ret
 	.not_tab
 
-	cp $0b
+	cp $0b ; "\v"
 	jr nz, .not_vtab
 
 		ld a, [cursor_y]
