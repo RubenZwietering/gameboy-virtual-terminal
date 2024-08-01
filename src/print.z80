@@ -629,17 +629,25 @@ vprintf:
 		push hl
 
 		ld a, [bc]
+		ld e, a
 		inc bc
-
-		push bc
-		call print_byte
-		pop bc
-
 		ld a, [bc]
+		ld d, a
 		inc bc
 
 		push bc
+		push de
+
+		ld a, d
+
 		call print_byte
+
+		pop de
+
+		ld a, e
+		
+		call print_byte
+
 		pop bc
 
 		pop hl
