@@ -18,7 +18,12 @@ include "memory.inc"
 macro PRINTF
 	static_assert fatal, !(_NARG < 1), "Too few arguments to PRINTF"
 
-	STRING __printf_fmt_str\@, \1
+	if strin("\1", "\"") != 0 		; check if string constant
+		STRING __printf_fmt_str\@, \1
+		def PRINTF_FMT_STR equs "__printf_fmt_str\@"
+	else
+		def PRINTF_FMT_STR equs "\1"
+	endc
 
 	def FIRST_HL_NARG = 0
 
@@ -216,11 +221,12 @@ macro PRINTF
 	ld hl, sp+0
 	LD_R16_R16 bc, hl
 
-	ld hl, __printf_fmt_str\@
+	ld hl, PRINTF_FMT_STR
 
 	call vprintf
 	add	sp, FORMAT_NARG * 2
 
+	purge PRINTF_FMT_STR
 	purge FIRST_HL_NARG
 	purge FORMAT_NARG
 endm
