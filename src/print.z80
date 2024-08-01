@@ -445,22 +445,32 @@ _vprintf:
 ;
 ; destroys `af`, `bc`, `de`, `hl`
 vprintf:
-	ld a, [hli]
-
-	or a ; cp "\0"
-	ret z
-	
-	cp "%"
-	jr z, .fmt_specifier
-
-	push hl
 	push bc
-	call putchar
-	pop bc
-	pop hl
-	jr vprintf
+
+	.print_loop
+		ld a, [hli]
+
+		or a ; cp "\0"
+		jr z, .exit
+		
+		cp "%"
+		jr z, .fmt
+		.return_from_fmt
+
+		push hl
+		call putchar
+		pop hl
+		jr .print_loop
 	
-	.fmt_specifier
+	.exit
+		pop bc
+		ret
+	
+	.fmt
+		ld d, 0 ; format flags
+		pop bc
+
+	.fmt_loop
 		ld a, [hli]
 
 		or a ; cp "\0"
@@ -516,12 +526,9 @@ vprintf:
 		cp "p"
 		jp z, .conversion_p
 
-		push hl
+		.exit_fmt
 		push bc
-		call putchar
-		pop bc
-		pop hl
-		jp vprintf
+		jr .return_from_fmt
 
 	.flag_left_justified
 		set FORMATB_BEHAVIOUR_LEFT_JUSTIFIED, d
