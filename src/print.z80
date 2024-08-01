@@ -198,16 +198,17 @@ print_bitsh:
 ; _print_bits
 ; 
 ; description:
-; print 8 bits
+; print the bits of a 16 bit value with precision
 ; 
 ; c function signiature:
-; int print_bits(unsigned char);
+; int print_bits(unsigned char precision, unsigned int bits);
 ;
 ; input:
-; - `a` : value
+; - `a` : precision
+; - `de` : bits
 ;
 ; returns:
-; - `bc` : number of characters written
+; - `bc` : TODO: number of characters written
 ;
 ; destroys `af`, `bc`, `de`, `hl`
 _print_bits:
@@ -216,31 +217,53 @@ _print_bits:
 ; print_bits
 ;
 ; input:
-; - `a` : value
+; - `a`  : precision TODO: 16 bit
+; - `de` : bits
 ;
 ; returns:
-; - `bc` : number of characters written
+; - `bc` : TODO: number of characters written
 ;
 ; destroys `af`, `bc`, `de`, `hl`
 print_bits:
-	ld h, a
-	ld l, 8
+	cp 17
+	jr c, .no_extra_padding
+		push de
+		sub 16
+		ld l, a
+		ld h, "0" ; TODO: sign extend?
+
+		.extra_padding_loop
+			push hl
+			ld a, h
+			call putchar
+			pop hl
+			dec l
+		jr nz, .extra_padding_loop
+
+		ld a, 16
+		pop de
+	.no_extra_padding
+
+	ld l, d
+	ld d, a
+	push de
+	ld e, l
 	
-	.loop
-		xor a
-		sla h
-		adc "0"
+	sub 8 ; jump if a > 8
+	jr nc, .bigger_than_8
+		xor a ; ld a, 0
+	.bigger_than_8
 
-		push hl
-		call putchar
-		pop hl
+	call print_bitsh
+	pop de
 
-		dec l
-	jr nz, .loop
+	ld a, d
+	cp 9 ; jump if a <= 8
+	jr c, .smaller_than_9
+		ld a, 8
+	.smaller_than_9
 
-	; TODO: return correct number of characters written
-	ld bc, 8
-	ret
+	jp print_bitsh
 ; print_bits
 ; _print_bits
 
