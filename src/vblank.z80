@@ -12,6 +12,7 @@ frame_count:				ds 1
 in_vblank_handler:			ds 1
 
 section "vblank interrupt", ROM0[INT_HANDLER_VBLANK] ; max 8 bytes
+ei ; allow nested interrups so serial communication can still happen without data corruption
 jp vblank_handler
 
 section "vblank functions", ROMX
@@ -28,7 +29,6 @@ init_vblank_mem:
 
 ; vblank_handler
 vblank_handler:
-	ei ; allow nested interrups so serial communication can still happen without data corruption
 	PUSH_ALL
 
 	ld a, [in_vblank_handler]
