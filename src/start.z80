@@ -37,6 +37,12 @@ hex_map: 			db "0123456789ABCDEF"
 section "global variables", wramx
 _hardware:					ds 1 ; 0 = dmg, 1 = cgb, 2 = gba
 
+def STACK_SIZE equ $100
+
+section "stack", wram0[_RAM + $1000 - STACK_SIZE]
+	ds STACK_SIZE
+stack:
+
 section "init", ROMX
 init:
 	; hardware detection
@@ -58,6 +64,8 @@ init:
 	ld [_hardware], a
 
 soft_init:
+	ld sp, stack
+
 	call wait_vblank ; screen can only be turned off while in vblank
 	
 	xor a
@@ -259,7 +267,6 @@ on_button_up:
 	bit PADB_START, b
 	jr z, .no_button_start
 		di
-		ld sp, $fffe
 		jp soft_init
 	.no_button_start
 	ret 
