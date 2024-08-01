@@ -268,50 +268,6 @@ print_bits:
 ; _print_bits
 
 
-; print_non_zero_bits
-; 
-; description:
-; print bits without leading zero bits
-;
-; input:
-; - `a` : value
-;
-; returns:
-; - `bc` : number of characters written
-;
-; destroys `af`, `bc`, `de`, `hl`
-print_non_zero_bits:
-	ld h, a
-	ld l, 8
-
-	.discard_leading_zeros_loop
-		dec l
-		jr z, .break
-		sla h
-	jr nc, .discard_leading_zeros_loop
-
-	rr h
-	.break
-	inc l
-	
-	.print_loop
-		xor a
-		sla h
-		adc "0"
-
-		push hl
-		call putchar
-		pop hl
-			
-		dec l
-	jr nz, .print_loop
-
-	; TODO: return correct number of characters written
-	ld bc, 8
-	ret
-; print_non_zero_bits
-
-
 ; _print_hex
 ; 
 ; description:
