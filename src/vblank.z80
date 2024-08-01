@@ -92,9 +92,14 @@ vblank_handler:
 
 		push bc
 
-		ld h, c
-		ld e, SCRN_X_B
-		call mul_h_e
+		ld b, 0
+		ld l, c
+		ld h, b
+		add hl, hl
+		add hl, hl
+		add hl, bc
+		add hl, hl
+		add hl, hl
 		; hl = y * SCRN_X_B
 
 		ld de, character_buffer
@@ -103,15 +108,13 @@ vblank_handler:
 
 		LD_R16_R16 de, hl
 
-		; since SCRN_VX_B = 32 can do 3 shift rights or 5 left to multilpy by 32 since its the upper 16 bits
-		ld h, c
-		ld l, 0
-		srl h
-		rr l
-		srl h
-		rr l
-		srl h
-		rr l
+		ld h, 0
+		ld l, c
+		add hl, hl
+		add hl, hl
+		add hl, hl
+		add hl, hl
+		add hl, hl
 		; hl = y * SCRN_VX_B
 
 		ld bc, _SCRN0
