@@ -66,7 +66,9 @@ macro PRINTF
 					ld hl, sp + (_NARG * 2)
 					pop af
 				elif strlen("\1") == 2 && strcmp(strlwr("\1"), "pc") == 0
-					ld hl, @
+					push af
+					call ld_hl_pc
+					pop af
 				elif strlen("\1") == 2 && strcmp(strlwr("\1"), "zf") == 0
 					; bit 7
 					ld hl, 1
@@ -149,11 +151,13 @@ macro PRINTF
 					ld [hl], d
 					pop de
 				elif strlen("\1") == 2 && strcmp(strlwr("\1"), "pc") == 0
-					ld hl, sp+4
-					ld a, low(@-2)
+					push de
+					call ld_de_pc
+					ld hl, sp+6
+					ld a, e
 					ld [hli], a
-					ld a, high(@-5)
-					ld [hl], a
+					ld [hl], d
+					pop de
 				elif strlen("\1") == 2 && strcmp(strlwr("\1"), "zf") == 0
 					; bit 7
 					ld a, 1
