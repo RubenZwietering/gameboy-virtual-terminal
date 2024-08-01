@@ -731,6 +731,15 @@ vprintf:
 	.conversion_b
 		push hl
 
+		; TODO: nice bit manipulation for this instead?
+		bit FORMATB_HAS_PRECISION_SPECIFIER, d
+		jr z, .no_precision_specifier
+			ld l, e
+			jr .has_precision_specifier
+		.no_precision_specifier
+			ld l, 1
+		.has_precision_specifier
+
 		ld a, [bc]
 		ld e, a
 		inc bc
@@ -740,24 +749,9 @@ vprintf:
 
 		push bc
 
-		; ld a, d
-		or a
-		jr z, .ignore_upper_bits
-			push de
-			call print_non_zero_bits
-			pop de
-	
-			ld a, e
-			call print_bits
-	
-			pop bc
+		ld a, l
 
-			pop hl
-			jp vprintf
-		.ignore_upper_bits
-	
-		ld a, e
-		call print_non_zero_bits
+		call print_bits
 
 		pop bc
 
