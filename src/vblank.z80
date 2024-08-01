@@ -84,29 +84,67 @@ vblank_handler:
 	add a ; sla a
 	ld [rSCY], a ; character_window_offset * 8
 
-	for Y, SCRN_VY_B
-		; if Y + SCRN_VY_B < character_window_offset + SCRN_Y_B -> do cpy
-		; if Y < character_window_offset -> no cpy
-		; if Y > character_window_offset + SCRN_Y_B -> no cpy
-		ld a, [character_window_offset]
-		cp Y + SCRN_VY_B - SCRN_Y_B + 1
-		jr nc, .do_cpy\@
-		cp Y + 1
-		jr nc, .no_cpy\@
-		add SCRN_Y_B
-		cp Y + 1
-		jr c, .no_cpy\@
+	ld bc, character_update_table_end - 1
+	.read_character_update_table
+		ld a, [bc]
+		or a
+		jr z, .decrement_ptr
 
-		.do_cpy\@
-		ld hl, _SCRN0 + SCRN_VX_B * Y
-		ld de, character_buffer + SCRN_X_B * Y
+		push bc
+
+		ld h, c
+		ld e, SCRN_X_B
+		call mul_h_e
+		; hl = y * SCRN_X_B
+
+		ld de, character_buffer
+		add hl, de
+		; hl = character_buffer + y * SCRN_X_B
+
+		LD_R16_R16 de, hl
+
+		; since SCRN_VX_B = 32 can do 3 shift rights or 5 left to multilpy by 32 since its the upper 16 bits
+		ld h, c
+		ld l, 0
+		srl h
+		rr l
+		srl h
+		rr l
+		srl h
+		rr l
+		; hl = y * SCRN_VX_B
+
+		ld bc, _SCRN0
+		add hl, bc
+		; hl = _SCRN0 + y * SCRN_VX_B
+
 		ld bc, SCRN_X_B
-		call vmemcpy
-		.no_cpy\@
-	endr
+		call memcpy
 
-	;ld a, HIGH(SHADOW_OAM)
-	;call OAMDMA ; dma routine
+		pop bc
+
+		ldh a, [rLY]
+		cp 144
+		jr c, .exit_vblank
+
+		xor a
+		ld [bc], a
+		.decrement_ptr
+		dec c
+		bit 7, c
+	jr z, .read_character_update_table
+
+	if def(DEBUG)
+	scf
+	ccf
+	endc
+	.exit_vblank
+	if def(DEBUG)
+	jr nc, .no_dputs_1
+		ld a, [frame_count]
+		DPUTS "not done drawing #%A% CLK #%TOTALCLKS%"
+	.no_dputs_1
+	endc
 
 	xor a
 	ld [in_vblank_handler], a
