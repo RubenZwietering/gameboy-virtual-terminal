@@ -209,6 +209,12 @@ scroll_window_once:
 	.skip
 	ld [character_window_offset], a
 
+	add SCRN_Y_B - 1
+	cp SCRN_VY_B
+	jr c, .no_wrap
+		sub SCRN_VY_B
+	.no_wrap
+
 	ld h, HIGH(character_update_table)
 	ld l, a
 	ld a, 1
