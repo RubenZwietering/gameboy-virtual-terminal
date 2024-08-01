@@ -2,6 +2,8 @@ include "macros.inc"
 
 export _print_byte
 export print_byte
+export _print_bitsh
+export print_bitsh
 export _print_bits
 export print_bits
 export _print_string
@@ -104,6 +106,93 @@ print_non_zero_nibbles:
 	ld bc, 1
 	ret
 ; print_non_zero_nibbles
+
+
+; _print_bitsh
+; 
+; description:
+; print the bits of an 8 bit value with precision
+; 
+; c function signiature:
+; int print_bitsh(unsigned char precision, unsigned char bits);
+;
+; input:
+; - `a` : precision
+; - `e` : bits
+;
+; returns:
+; - `bc` : TODO: number of characters written
+;
+; destroys `af`, `bc`, `de`, `hl`
+_print_bitsh:
+	; fallthrough
+
+; print_bitsh
+;
+; input:
+; - `a` : precision
+; - `e` : bits
+;
+; returns:
+; - `bc` : TODO: number of characters written
+;
+; destroys `af`, `bc`, `de`, `hl`
+print_bitsh:
+	cp 9
+	jr nc, .extra_padding
+
+	ld d, a
+	ld a, 8
+	sub d ; 8 - a
+	jr z, .no_discard_zeros
+		inc a
+		.discard_leading_zeros_loop
+			dec a
+			jr z, .break_discard_leading_zeros_loop
+			sla e
+		jr nc, .discard_leading_zeros_loop
+		rr e
+		
+		.break_discard_leading_zeros_loop
+		
+		add d
+		ret z
+		ld d, a
+	.no_discard_zeros
+
+	.print_bit_loop
+		xor a
+		sla e
+		adc "0"
+
+		push de
+		call putchar
+		pop de
+
+		dec d
+	jr nz, .print_bit_loop
+	ret
+
+	.extra_padding
+		push de
+
+		sub 8
+		ld l, a
+		ld h, "0" ; TODO: sign extend?
+
+		.extra_padding_loop
+			ld a, h
+			push hl
+			call putchar
+			pop hl
+			dec l
+		jr nz, .extra_padding_loop
+
+		pop de
+		ld d, 8
+		jr .print_bit_loop
+; print_bitsh
+; _print_bitsh
 
 
 ; _print_bits
