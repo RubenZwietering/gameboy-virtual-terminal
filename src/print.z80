@@ -12,6 +12,14 @@ export _vprintf
 export vprintf
 export _printf
 
+def FORMATB_BEHAVIOUR_LEFT_JUSTIFIED 			equ 0
+def FORMATB_BEHAVIOUR_SIGN_PREPENDED 			equ 1
+def FORMATB_BEHAVIOUR_SPACE 					equ 2
+def FORMATB_BEHAVIOUR_ALTERNATIVE_FORM 			equ 3
+def FORMATB_BEHAVIOUR_LEADING_ZEROS 			equ 4
+def FORMATB_HAS_MINIMUM_FIELD_WIDTH_SPECIFIER 	equ 5
+def FORMATB_HAS_PRECISION_SPECIFIER 			equ 6
+
 section "print functions", ROMX
 ; _print_byte
 ; 
@@ -482,6 +490,7 @@ vprintf:
 
 		cp "."
 		jp z, .precision_specifier
+		.exit_precision_specifier
 
 		; length modifiers: hh, h, l, ll, j, z, t, L
 
@@ -515,23 +524,85 @@ vprintf:
 		jp vprintf
 
 	.flag_left_justified
-		jp .fmt_specifier
+		set FORMATB_BEHAVIOUR_LEFT_JUSTIFIED, d
+		jp .fmt_loop
 	.flag_sign_prepended
-		jp .fmt_specifier
+		set FORMATB_BEHAVIOUR_SIGN_PREPENDED, d
+		jp .fmt_loop
 	.flag_space
-		jp .fmt_specifier
+		set FORMATB_BEHAVIOUR_SPACE, d
+		jp .fmt_loop
 	.flag_alternative_form
-		jp .fmt_specifier
+		set FORMATB_BEHAVIOUR_ALTERNATIVE_FORM, d
+		jp .fmt_loop
 	.flag_leading_zeros
-		jp .fmt_specifier
+		set FORMATB_BEHAVIOUR_LEADING_ZEROS, d
+		jp .fmt_loop
 
 	.minimum_field_width_specifier 
 		; minimum field with specifier not supported yet
-		jp .fmt_specifier
+		set FORMATB_HAS_MINIMUM_FIELD_WIDTH_SPECIFIER, d
+		jp .fmt_loop
 
 	.precision_specifier
+		bit FORMATB_HAS_PRECISION_SPECIFIER, d
+		jr nz, .exit_fmt
+		set FORMATB_HAS_PRECISION_SPECIFIER, d
+		ld e, 0 ; precision
+		
+		ld a, [hli]
 
-		jp .fmt_specifier
+		or a ; cp "\0"
+		ret z
+
+		cp "*"
+		jr z, .precision_specifier_asterisk
+		sub "0"
+		cp 10
+		jr c, .precision_specifier_digit
+		add "0"
+
+		jp .exit_precision_specifier
+
+	.precision_specifier_asterisk
+		ld a, [bc]
+		ld e, a
+		inc bc
+		inc bc
+
+		ld a, [hli]
+
+		or a ; cp "\0"
+		ret z
+
+		jp .exit_precision_specifier
+
+	.precision_specifier_digit
+		push bc
+
+		; e = e * 10 + a
+		ld b, a
+		ld a, e
+		ld c, a
+		add a
+		add a
+		add c
+		add a
+		add b
+		ld e, a
+
+		pop bc
+
+		ld a, [hli]
+
+		or a ; cp "\0"
+		ret z
+		
+		sub "0"
+		cp 10
+		jr c, .precision_specifier_digit
+		add "0"
+		jp .exit_precision_specifier
 
 	.conversion_c
 		push hl
