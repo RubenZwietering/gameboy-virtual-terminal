@@ -85,10 +85,24 @@ vblank_handler:
 	ld [rSCY], a ; character_window_offset * 8
 
 	for Y, SCRN_VY_B
+		; if Y + SCRN_VY_B < character_window_offset + SCRN_Y_B -> do cpy
+		; if Y < character_window_offset -> no cpy
+		; if Y > character_window_offset + SCRN_Y_B -> no cpy
+		ld a, [character_window_offset]
+		cp Y + SCRN_VY_B - SCRN_Y_B + 1
+		jr nc, .do_cpy\@
+		cp Y + 1
+		jr nc, .no_cpy\@
+		add SCRN_Y_B
+		cp Y + 1
+		jr c, .no_cpy\@
+
+		.do_cpy\@
 		ld hl, _SCRN0 + SCRN_VX_B * Y
 		ld de, character_buffer + SCRN_X_B * Y
 		ld bc, SCRN_X_B
 		call vmemcpy
+		.no_cpy\@
 	endr
 
 	;ld a, HIGH(SHADOW_OAM)
