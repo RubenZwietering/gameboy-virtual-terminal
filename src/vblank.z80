@@ -84,13 +84,33 @@ vblank_handler:
 	add a ; sla a
 	ld [rSCY], a ; character_window_offset * 8
 
-	ld bc, character_update_table_end - 1
-	.read_character_update_table
+	ld bc, character_update_table_end
+
+	.update_loop
+		dec c
+		bit 7, c
+		jr nz, .end_loop
+
 		ld a, [bc]
 		or a
-		jr z, .decrement_ptr
+		jr z, .update_loop
 
 		push bc
+
+		ld h, 0
+		ld l, c
+		add hl, hl
+		add hl, hl
+		add hl, hl
+		add hl, hl
+		add hl, hl
+		; hl = y * SCRN_VX_B
+
+		ld de, _SCRN0
+		add hl, de
+		; hl = _SCRN0 + y * SCRN_VX_B
+		
+		LD_R16_R16 de, hl
 
 		ld b, 0
 		ld l, c
@@ -102,27 +122,17 @@ vblank_handler:
 		add hl, hl
 		; hl = y * SCRN_X_B
 
-		ld de, character_buffer
-		add hl, de
+		ld bc, character_buffer
+		add hl, bc
 		; hl = character_buffer + y * SCRN_X_B
 
-		LD_R16_R16 de, hl
-
-		ld h, 0
-		ld l, c
-		add hl, hl
-		add hl, hl
-		add hl, hl
-		add hl, hl
-		add hl, hl
-		; hl = y * SCRN_VX_B
-
-		ld bc, _SCRN0
-		add hl, bc
-		; hl = _SCRN0 + y * SCRN_VX_B
-
-		ld bc, SCRN_X_B
-		call memcpy
+		ld c, SCRN_X_B
+		.memcpy_loop
+			ldi a, [hl]
+			ld [de], a
+			inc e 	; cannot go over a 256 byte boundary so only increasing lower byte is fine
+			dec c
+		jr nz, .memcpy_loop
 
 		pop bc
 
@@ -132,10 +142,8 @@ vblank_handler:
 
 		xor a
 		ld [bc], a
-		.decrement_ptr
-		dec c
-		bit 7, c
-	jr z, .read_character_update_table
+		jr .update_loop
+	.end_loop
 
 	if def(DEBUG)
 	scf
