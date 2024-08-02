@@ -88,17 +88,17 @@ vblank_handler:
 
 	.update_loop
 		dec c
-		bit 7, c
-		jr nz, .end_loop
+		jr z, .do_0th_iter
 
 		ld a, [bc]
 		or a
 		jr z, .update_loop
 
-		push bc
+	.do_update
+		ld a, c
+		ld b, 0
 
-		ld h, 0
-		ld l, c
+		LD_R16_R16 hl, bc
 		add hl, hl
 		add hl, hl
 		add hl, hl
@@ -112,9 +112,7 @@ vblank_handler:
 		
 		LD_R16_R16 de, hl
 
-		ld b, 0
-		ld l, c
-		ld h, b
+		LD_R16_R16 hl, bc
 		add hl, hl
 		add hl, hl
 		add hl, bc
@@ -126,15 +124,17 @@ vblank_handler:
 		add hl, bc
 		; hl = character_buffer + y * SCRN_X_B
 
-		ld c, SCRN_X_B
+		ld c, a
+
+		ld b, SCRN_X_B
 		.memcpy_loop
 			ldi a, [hl]
 			ld [de], a
 			inc e 	; cannot go over a 256 byte boundary so only increasing lower byte is fine
-			dec c
-		jr nz, .memcpy_loop
+			dec b
+			jr nz, .memcpy_loop
 
-		pop bc
+		ld b, high(character_update_table)
 
 		ldh a, [rLY]
 		cp 144
@@ -142,8 +142,12 @@ vblank_handler:
 
 		xor a
 		ld [bc], a
-		jr .update_loop
-	.end_loop
+		or c 		; c == 0 ?
+		jr nz, .update_loop
+	.do_0th_iter
+		ld a, [bc]
+		or a
+		jr nz, .do_update
 
 	if def(DEBUG)
 	scf
