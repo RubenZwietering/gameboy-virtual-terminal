@@ -32,7 +32,7 @@ character_buffer: 		ds SCRN_X_B * SCRN_VY_B
 character_buffer_end:
 def CHARACTER_BUFFER_SIZE equ character_buffer_end - character_buffer
 
-section "character output update table", WRAMX, ALIGN[8]
+section "character output update table", WRAMX, ALIGN[8, 1] ; offset of 1 for easier bounds checking in vblank
 character_update_table: 	ds SCRN_VY_B
 character_update_table_end:
 
@@ -216,6 +216,7 @@ scroll_window_once:
 	.no_wrap
 
 	ld h, HIGH(character_update_table)
+	inc a
 	ld l, a
 	ld a, 1
 	ld [hl], a
@@ -373,6 +374,7 @@ putchar:
 		sub SCRN_VY_B
 	.no_wrap
 	ld h, HIGH(character_update_table)
+	inc a
 	ld l, a
 	ld a, 1
 	ld [hl], a
