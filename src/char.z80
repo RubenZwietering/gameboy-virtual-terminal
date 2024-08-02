@@ -13,6 +13,8 @@ export character_buffer_end
 
 export init_character_mem
 
+export scroll_window_once
+
 export character_update_table
 export character_update_table_end
 
@@ -329,9 +331,9 @@ _putchar:
 ; destroys `af`, `bc`, `de`, `hl`
 putchar:
 	cp " " 		; 0 to $1f
-	jr c, .control_code
+	jr c, .c0_control_code
 	cp $7f 		; delete and above
-	ret nc
+	jr nc, .c1_control_code
 	
 	push af
 
@@ -385,84 +387,26 @@ putchar:
 	pop af
 	ret
 
+	.c0_control_code
+		add a 			; sla a
+		ld h, high(c0_control_code)
+		ld l, a
+		ldi a, [hl]
+		ld h, [hl]
+		ld l, a
+		jp hl
 
-
-	.control_code
-		or a		; cp "\0"
-		ret z
-		cp "\n"
-		jr z, .lf 	; line feed
-		cp "\r"
-		jr z, .cr 	; carriage return
-		cp $08 		; "\b"
-		jr z, .bs 	; backspace
-		cp "\t"
-		jr z, .ht 	; horizontal tab
-		cp $0b 		; "\v"
-		jr z, .vt 	; vertical tab
-		ret
-
-	.lf
-		xor a
-		ld [cursor_x], a
-
-		ld a, [cursor_y]
-		inc a
-		ld [cursor_y], a
-		cp a, SCRN_Y_B
-		ret c
-
-		ld a, SCRN_Y_B - 1
-		ld [cursor_y], a
-
-		jp scroll_window_once
-
-	.cr
-		xor a
-		ld [cursor_x], a
-
-		ret
-
-	.bs
-		ld a, [cursor_x]
-		or a
-		ret z
-
-		dec a
-		ld [cursor_x], a
-
-		ret
-
-	.ht
-		ld a, [cursor_x]
-		cp SCRN_X_B - 1
-		ret z
-
-		ld c, a
-		and %00000111
-		ld b, a
-		ld a, 8
-		sub b
-		add c
-
-		cp SCRN_X_B - 1
-		ld [cursor_x], a
-		ret c
-
-		ld a, SCRN_X_B - 1
-		ld [cursor_x], a
-
-		ret
-
-	.vt
-		ld a, [cursor_y]
-		cp SCRN_Y_B
-		jp nc, scroll_window_once
-
-		inc a
-		ld [cursor_y], a
-
-		ret
+	.c1_control_code
+		ret z 			; (del) delete
+		cp $a0
+		ret nc 			; outside range of c1 control codes
+		add a 			; sla a, top bit falls off
+		ld h, high(c1_control_code)
+		ld l, a
+		ldi a, [hl]
+		ld h, [hl]
+		ld l, a
+		jp hl
 ; putchar
 ; _putchar
 

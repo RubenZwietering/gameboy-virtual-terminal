@@ -1,3 +1,5 @@
+include "hardware.inc"
+
 export c0_control_code
 
 section "c0 control code jump table", romx, align[8]
@@ -46,12 +48,7 @@ c0_control_code.tc4:
 c0_control_code.tc5:
 c0_control_code.tc6:
 c0_control_code.bel:
-c0_control_code.fe0:
-c0_control_code.fe1:
-c0_control_code.fe2:
-c0_control_code.fe3:
 c0_control_code.fe4:
-c0_control_code.fe5:
 c0_control_code.so:
 c0_control_code.si:
 c0_control_code.tc7:
@@ -70,4 +67,66 @@ c0_control_code.is4:
 c0_control_code.is3:
 c0_control_code.is2:
 c0_control_code.is1:
+	ret
+
+c0_control_code.fe0:
+	ld a, [cursor_x]
+	or a
+	ret z
+
+	dec a
+	ld [cursor_x], a
+
+	ret
+
+c0_control_code.fe1:
+	ld a, [cursor_x]
+	cp SCRN_X_B - 1
+	ret z
+
+	ld c, a
+	and %00000111
+	ld b, a
+	ld a, 8
+	sub b
+	add c
+
+	cp SCRN_X_B - 1
+	ld [cursor_x], a
+	ret c
+
+	ld a, SCRN_X_B - 1
+	ld [cursor_x], a
+
+	ret
+	
+c0_control_code.fe2:
+	xor a
+	ld [cursor_x], a
+
+	ld a, [cursor_y]
+	inc a
+	ld [cursor_y], a
+	cp a, SCRN_Y_B
+	ret c
+
+	ld a, SCRN_Y_B - 1
+	ld [cursor_y], a
+
+	jp scroll_window_once
+
+c0_control_code.fe3:
+	ld a, [cursor_y]
+	cp SCRN_Y_B
+	jp nc, scroll_window_once
+
+	inc a
+	ld [cursor_y], a
+
+	ret
+
+c0_control_code.fe5:
+	xor a
+	ld [cursor_x], a
+
 	ret
