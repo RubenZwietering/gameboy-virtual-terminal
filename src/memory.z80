@@ -2,11 +2,17 @@ include "memory.inc"
 
 export ld_hl_pc
 export ld_de_pc
+export memcpyh
 export memcpy
+export memseth
 export memset
+export memxorh
 export memxor
+export vmemcpyh
 export vmemcpy
+export vmemseth
 export vmemset
+export vmemxorh
 export vmemxor
 
 section "memory functions", ROMX
@@ -50,6 +56,26 @@ ld_de_pc:
 ; ld_de_pc
 
 
+; memcpyh
+;
+; 8 bit memcpy. if a size of 0 is passed, 256 bytes are copied instead
+; 
+; input
+; - `hl` : destination
+; - `de` : source
+; - `c` : size
+;
+; destroys `af`, `de`, `c`, `hl`
+memcpyh:
+	ld a, [de]
+	ld [hli], a
+	inc de
+	dec c
+	jr nz, memcpyh
+	ret
+; memcpyh
+
+
 ; memcpy
 ;
 ; input
@@ -75,6 +101,25 @@ memcpy:
 	ret
 ; memcpy
 
+
+; memseth
+;
+; 8 bit memset. if a size of 0 is passed, 256 bytes are set instead
+;
+; input
+; - `a`  : value
+; - `hl` : destination
+; - `c` : size
+;
+; destroys `f`, `c`, `hl`
+memseth:
+	ld [hli], a
+	dec c
+	jr nz, memseth
+	ret
+; memseth
+
+
 ; memset
 ;
 ; input
@@ -97,6 +142,26 @@ memset:
 	jr nz, .loop
 	ret
 ; memset
+
+
+; memxorh
+;
+; 8 bit memxor. if a size of 0 is passed, 256 bytes are xored instead
+;
+; input
+; - `hl` : destination
+; - `bc` : size
+;
+; destroys `af`, `c`, `hl`
+memxorh:
+	ld a, [hl]
+	cpl
+	ld [hli], a
+	dec c
+	jr nz, memxorh
+	ret
+; memxorh
+
 
 ; memxor
 ;
@@ -121,6 +186,27 @@ memxor:
 	jr nz, .loop
 	ret
 ; memxor
+
+
+; vmemcpyh
+;
+; 8 bit vram memcpy. if a size of 0 is passed, 256 bytes are copied instead
+;
+; input
+; - `hl` : destination
+; - `de` : source
+; - `c` : size
+;
+; destroys `af`, `de`, `c`, `hl`
+vmemcpyh:
+	WAIT_BLANK
+	ld a, [de]
+	ld [hli], a
+	inc de
+	dec c
+	jr nz, vmemcpyh
+	ret
+; vmemcpyh
 
 
 ; vmemcpy
@@ -150,6 +236,30 @@ vmemcpy:
 	ret
 ; vmemcpy
 
+
+; vmemseth
+;
+; 8 bit vram memset. if a size of 0 is passed, 256 bytes are set instead
+;
+; input
+; - `a`  : value
+; - `hl` : destination
+; - `bc` : size
+;
+; destroys `f`, `bc`, `hl`
+vmemseth:
+	ld b, a
+	.loop
+		WAIT_BLANK
+
+		ld a, b
+		ld [hli], a
+		dec c
+		jr nz, .loop
+	ret
+; vmemseth
+
+
 ; vmemset
 ;
 ; input
@@ -176,6 +286,28 @@ vmemset:
 	jr nz, .loop
 	ret
 ; vmemset
+
+
+; vmemxorh
+;
+; 8 bit vram memset. if a size of 0 is passed, 256 bytes are xored instead
+;
+; input
+; - `hl` : destination
+; - `bc` : size
+;
+; destroys `af`, `bc`, `hl`
+vmemxorh:
+	WAIT_BLANK
+
+	ld a, [hl]
+	cpl
+	ld [hli], a
+	dec c
+	jr nz, vmemxorh
+	ret
+; vmemxorh
+
 
 ; vmemxor
 ;
