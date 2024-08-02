@@ -63,6 +63,7 @@ endif
 ASRCS:=							\
 	char.z80					\
 	bcd.z80						\
+	c0_control_code.z80			\
 	crash.z80					\
 	cursor.z80					\
 	div.z80						\

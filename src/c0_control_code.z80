@@ -1,0 +1,73 @@
+export c0_control_code
+
+section "c0 control code jump table", romx, align[8]
+c0_control_code:
+; https://en.wikipedia.org/wiki/C0_and_C1_control_codes#C0_controls
+;  abbr    alt abbr hex car c esc
+dw .nul  ;          $00  ^@  \0 
+dw .tc1  ; soh      $01  ^A     
+dw .tc2  ; stx      $02  ^B     
+dw .tc3  ; etx      $03  ^C     
+dw .tc4  ; eot      $04  ^D     
+dw .tc5  ; enq,wru  $05  ^E     
+dw .tc6  ; ack      $06  ^F     
+dw .bel  ;          $07  ^G  \a 
+dw .fe0  ; bs       $08  ^H  \b 
+dw .fe1  ; ht       $09  ^I  \t 
+dw .fe2  ; lf       $0a  ^J  \n 
+dw .fe3  ; vt       $0b  ^K  \v 
+dw .fe4  ; ff       $0c  ^L  \f 
+dw .fe5  ; cr       $0d  ^M  \r 
+dw .so   ; ls0      $0e  ^N     
+dw .si   ; ls1      $0f  ^O     
+dw .tc7  ; dc0,dle  $10  ^P     
+dw .dc1  ; xon      $11  ^Q     
+dw .dc2  ; tape     $12  ^R     
+dw .dc3  ; xoff     $13  ^S     
+dw .dc4  ;          $14  ^T     
+dw .tc8  ; nak      $15  ^U     
+dw .tc9  ; syn      $16  ^V     
+dw .tc10 ; etb      $17  ^W     
+dw .can  ;          $18  ^X     
+dw .em   ;          $19  ^Y     
+dw .sub_ ;          $1a  ^Z     
+dw .esc  ;          $1b  ^[  \e 
+dw .is4  ; fs       $1c  ^\     
+dw .is3  ; gs       $1d  ^]     
+dw .is2  ; rs       $1e  ^^     
+dw .is1  ; us       $1f  ^_     
+
+section "c0 control code handlers", romx
+c0_control_code.nul:
+c0_control_code.tc1:
+c0_control_code.tc2:
+c0_control_code.tc3:
+c0_control_code.tc4:
+c0_control_code.tc5:
+c0_control_code.tc6:
+c0_control_code.bel:
+c0_control_code.fe0:
+c0_control_code.fe1:
+c0_control_code.fe2:
+c0_control_code.fe3:
+c0_control_code.fe4:
+c0_control_code.fe5:
+c0_control_code.so:
+c0_control_code.si:
+c0_control_code.tc7:
+c0_control_code.dc1:
+c0_control_code.dc2:
+c0_control_code.dc3:
+c0_control_code.dc4:
+c0_control_code.tc8:
+c0_control_code.tc9:
+c0_control_code.tc10:
+c0_control_code.can:
+c0_control_code.em:
+c0_control_code.sub_:
+c0_control_code.esc:
+c0_control_code.is4:
+c0_control_code.is3:
+c0_control_code.is2:
+c0_control_code.is1:
+	ret
