@@ -88,7 +88,7 @@ vblank_handler:
 
 	.update_loop
 		dec c
-		jr z, .do_0th_iter
+		jr z, .do_0th_iter 		; go to .do_update if update table entry is not 0
 
 		ld a, [bc]
 		or a
@@ -106,7 +106,7 @@ vblank_handler:
 		add hl, hl
 		; hl = y * SCRN_VX_B
 
-		ld de, _SCRN0
+		ld de, _SCRN0 + SCRN_X_B
 		add hl, de
 		; hl = _SCRN0 + y * SCRN_VX_B
 		
@@ -120,34 +120,57 @@ vblank_handler:
 		add hl, hl
 		; hl = y * SCRN_X_B
 
-		ld bc, character_buffer
+		ld bc, character_buffer + SCRN_X_B - 1
 		add hl, bc
 		; hl = character_buffer + y * SCRN_X_B
 
 		ld c, a
 
+	.do_update_fast
 		ld b, SCRN_X_B
 		.memcpy_loop
-			ldi a, [hl]
+			ldd a, [hl]
+			dec e 	; cannot go over a 256 byte boundary so only decreasing lower byte is fine
 			ld [de], a
-			inc e 	; cannot go over a 256 byte boundary so only increasing lower byte is fine
 			dec b
 			jr nz, .memcpy_loop
 
-		ld b, high(character_update_table)
-
 		ldh a, [rLY]
+		DPUTS "LY=%A% Y=%C%"
 		cp 144
 		jr c, .exit_vblank
 
 		xor a
+		ld b, high(character_update_table)
 		ld [bc], a
 		or c 		; c == 0 ?
-		jr nz, .update_loop
+		jr z, .loop_end
+
+		dec c
+		jr z, .do_0th_iter_fast 	; go to .do_update_fast_start if update table entry is not 0
+
+		ld a, [bc]
+		or a
+		jr z, .update_loop
+
+	.do_update_fast_start 			; skip recalculating indexes and subtract offset relative to the last line
+		ld a, e
+		sub SCRN_VX_B - SCRN_X_B
+		ld e, a
+		sbc a
+		add d
+		ld d, a
+		jr .do_update_fast
+
+	.do_0th_iter_fast
+		ld a, [bc]
+		or a
+		jr nz, .do_update_fast_start
 	.do_0th_iter
 		ld a, [bc]
 		or a
 		jr nz, .do_update
+	.loop_end
 
 	if def(DEBUG)
 	scf
