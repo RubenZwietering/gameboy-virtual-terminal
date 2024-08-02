@@ -1,0 +1,73 @@
+export c1_control_code
+
+section "c1 control code jump table", romx, align[8]
+c1_control_code:
+; https://en.wikipedia.org/wiki/C0_and_C1_control_codes#C1_controls
+;  abbr    alt abbr hex esc+
+dw .pad  ;          $80   @
+dw .hop  ;          $81   A
+dw .bph  ;          $82   B
+dw .nbh  ;          $83   C
+dw .ind  ;          $84   D
+dw .nel  ;          $85   E
+dw .ssa  ;          $86   F
+dw .esa  ;          $87   G
+dw .hts  ;          $88   H
+dw .htj  ;          $89   I
+dw .vts  ;          $8a   J
+dw .pld  ;          $8b   K
+dw .plu  ;          $8c   L
+dw .ri   ;          $8d   M
+dw .ss2  ;          $8e   N
+dw .ss3  ;          $8f   O
+dw .dcs  ;          $90   P
+dw .pu1  ;          $91   Q
+dw .pu2  ;          $92   R
+dw .sts  ;          $93   S
+dw .cch  ;          $94   T
+dw .mw   ;          $95   U
+dw .spa  ;          $96   V
+dw .epa  ;          $97   W
+dw .sos  ;          $98   X
+dw .sgc  ; sgci     $99   Y
+dw .sci  ;          $9a   Z
+dw .csi  ;          $9b   [
+dw .st   ;          $9c   \
+dw .osc  ;          $9d   ]
+dw .pm   ;          $9e   ^
+dw .apc  ;          $9f   _
+
+section "c1 control code handlers", romx
+c1_control_code.pad:
+c1_control_code.hop:
+c1_control_code.bph:
+c1_control_code.nbh:
+c1_control_code.ind:
+c1_control_code.nel:
+c1_control_code.ssa:
+c1_control_code.esa:
+c1_control_code.hts:
+c1_control_code.htj:
+c1_control_code.vts:
+c1_control_code.pld:
+c1_control_code.plu:
+c1_control_code.ri:
+c1_control_code.ss2:
+c1_control_code.ss3:
+c1_control_code.dcs:
+c1_control_code.pu1:
+c1_control_code.pu2:
+c1_control_code.sts:
+c1_control_code.cch:
+c1_control_code.mw:
+c1_control_code.spa:
+c1_control_code.epa:
+c1_control_code.sos:
+c1_control_code.sgc:
+c1_control_code.sci:
+c1_control_code.csi:
+c1_control_code.st:
+c1_control_code.osc:
+c1_control_code.pm:
+c1_control_code.apc:
+	ret
