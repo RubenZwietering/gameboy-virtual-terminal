@@ -95,4 +95,40 @@ macro DPUTSJP
 endm
 ; DPUTSJP
 
+
+; DPUTSCJP
+; ---
+;
+; A conditional jump to DPUTS and back.
+;
+; ---
+; parameters:
+; - 1 : jump condition
+; - ... : see DPUTS
+; 
+; ---
+; modifies: none
+macro DPUTSCJP
+	static_assert fatal, !(_NARG < 1), "Too few arguments to DPUTSCJP"
+	if def(DEBUG)
+
+	shift
+
+	pushs
+	section "__debug_puts_cjp\@ function", romx
+		__debug_puts_cjp_to_function\@:
+		DPUTS \#
+		jp :+ 							; return from function
+	pops
+
+	shift -1
+
+	jp \1, __debug_puts_cjp_to_function\@ 	; no call so stack pointer stays intact
+	:
+
+	endc
+endm
+; DPUTSCJP
+
+
 endc ; DEBUG_INC
