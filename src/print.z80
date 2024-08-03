@@ -2,10 +2,10 @@ include "macros.inc"
 
 export _print_byte
 export print_byte
-export _print_bitsh
-export print_bitsh
-export _print_bits
-export print_bits
+export _print_binaryh
+export print_binaryh
+export _print_binary
+export print_binary
 export _print_string
 export print_string
 export _vprintf
@@ -116,13 +116,13 @@ print_non_zero_nibbles:
 ; print_non_zero_nibbles
 
 
-; _print_bitsh
+; _print_binaryh
 ; 
 ; description:
 ; print the bits of an 8 bit value with precision
 ; 
 ; c function signiature:
-; int print_bitsh(unsigned char precision, unsigned char bits);
+; int print_binaryh(unsigned char precision, unsigned char bits);
 ;
 ; input:
 ; - `a` : precision
@@ -132,10 +132,10 @@ print_non_zero_nibbles:
 ; - `bc` : TODO: number of characters written
 ;
 ; destroys `af`, `bc`, `de`, `hl`
-_print_bitsh:
+_print_binaryh:
 	; fallthrough
 
-; print_bitsh
+; print_binaryh
 ;
 ; input:
 ; - `a` : precision
@@ -145,7 +145,7 @@ _print_bitsh:
 ; - `bc` : TODO: number of characters written
 ;
 ; destroys `af`, `bc`, `de`, `hl`
-print_bitsh:
+print_binaryh:
 	cp 9
 	jr nc, .extra_padding
 
@@ -199,17 +199,17 @@ print_bitsh:
 		pop de
 		ld d, 8
 		jr .print_bit_loop
-; print_bitsh
-; _print_bitsh
+; print_binaryh
+; _print_binaryh
 
 
-; _print_bits
+; _print_binary
 ; 
 ; description:
 ; print the bits of a 16 bit value with precision
 ; 
 ; c function signiature:
-; int print_bits(unsigned char precision, unsigned int bits);
+; int print_binary(unsigned char precision, unsigned int bits);
 ;
 ; input:
 ; - `a` : precision
@@ -219,10 +219,10 @@ print_bitsh:
 ; - `bc` : TODO: number of characters written
 ;
 ; destroys `af`, `bc`, `de`, `hl`
-_print_bits:
+_print_binary:
 	; fallthrough
 
-; print_bits
+; print_binary
 ;
 ; input:
 ; - `a`  : precision TODO: 16 bit
@@ -232,7 +232,7 @@ _print_bits:
 ; - `bc` : TODO: number of characters written
 ;
 ; destroys `af`, `bc`, `de`, `hl`
-print_bits:
+print_binary:
 	cp 17
 	jr c, .no_extra_padding
 		push de
@@ -262,7 +262,7 @@ print_bits:
 		xor a ; ld a, 0
 	.bigger_than_8
 
-	call print_bitsh
+	call print_binaryh
 	pop de
 
 	ld a, d
@@ -271,9 +271,9 @@ print_bits:
 		ld a, 8
 	.smaller_than_9
 
-	jp print_bitsh
-; print_bits
-; _print_bits
+	jp print_binaryh
+; print_binary
+; _print_binary
 
 
 ; _print_hex
@@ -758,7 +758,7 @@ vprintf:
 
 		ld a, l
 
-		call print_bits
+		call print_binary
 
 		pop bc
 
