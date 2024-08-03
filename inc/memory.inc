@@ -19,34 +19,50 @@ endm
 ; 
 ; arguments:
 ; - 1 : string name
-; - 2 : string constant
+; - ... : string constants and/or bytes
 ; 
-; destroys `af`, `bc`, `de`, `hl`
+; destroys none
 macro STRING
 	static_assert fatal, !(_NARG < 2), "Too few arguments to STRING"
-	static_assert fatal, !(_NARG > 2), "Too many arguments to STRING"
 
 	pushs
 	section "__inline_str_\1\@ section", ROMX
 	\1:
-		db \2, 0
+		shift
+		db \#, 0
 	pops
 endm
 ; STRING
+
+
+; DW_STRING_PTR
+; 
+; arguments:
+; - ... : string constants and/or bytes
+; 
+; destroys none
+macro DW_STRING_PTR
+	assert fatal, !(_NARG < 1), "Too few arguments to DW_STRING_PTR"
+
+	STRING __inline_str_ptr\@, \#
+	dw __inline_str_ptr\@
+endm
+; DW_STRING_PTR
 
 
 ; LD_STRING
 ; 
 ; arguments:
 ; - 1 : 16 bit register
-; - 2 : string constant
+; - ... : string constants and/or bytes
 ; 
-; destroys `af`, `bc`, `de`, `hl`
+; destroys none
 macro LD_STRING
 	static_assert fatal, !(_NARG < 2), "Too few arguments to LD_STRING"
-	static_assert fatal, !(_NARG > 2), "Too many arguments to LD_STRING"
 
-	STRING __inline_str\@, \2
+	shift
+	STRING __inline_str\@, \#
+	shift -1
 	ld \1, __inline_str\@
 endm
 ; LD_STRING
