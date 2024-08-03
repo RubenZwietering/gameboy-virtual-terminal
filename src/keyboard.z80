@@ -1,0 +1,143 @@
+include "keyboard.inc"
+
+section "keyboard scan code set 2 to key code translation table", romx, align[8]
+keyboard_scan_code_set_2_to_key_code_table:
+; https://wiki.osdev.org/PS/2_Keyboard#Scan_Code_Set_2
+; https://www.vetra.com/scancodes.html
+/* $00 */ db KEY_RESERVED
+/* $01 */ db KEY_F9
+/* $02 */ db KEY_RESERVED
+/* $03 */ db KEY_F5
+/* $04 */ db KEY_F3
+/* $05 */ db KEY_F1
+/* $06 */ db KEY_F2
+/* $07 */ db KEY_F12
+/* $08 */ db KEY_RESERVED
+/* $09 */ db KEY_F10
+/* $0a */ db KEY_F8
+/* $0b */ db KEY_F6
+/* $0c */ db KEY_F4
+/* $0d */ db KEY_TAB
+/* $0e */ db KEY_GRAVE
+/* $0f */ db KEY_RESERVED
+	
+/* $10 */ db KEY_RESERVED
+/* $11 */ db KEY_LEFTALT
+/* $12 */ db KEY_LEFTSHIFT
+/* $13 */ db KEY_RESERVED
+/* $14 */ db KEY_LEFTCTRL
+/* $15 */ db KEY_Q
+/* $16 */ db KEY_1
+/* $17 */ db KEY_RESERVED
+/* $18 */ db KEY_RESERVED
+/* $19 */ db KEY_RESERVED
+/* $1a */ db KEY_Z
+/* $1b */ db KEY_S
+/* $1c */ db KEY_A
+/* $1d */ db KEY_W
+/* $1e */ db KEY_2
+/* $1f */ db KEY_RESERVED
+	
+/* $20 */ db KEY_RESERVED
+/* $21 */ db KEY_C
+/* $22 */ db KEY_X
+/* $23 */ db KEY_D
+/* $24 */ db KEY_E
+/* $25 */ db KEY_4
+/* $26 */ db KEY_3
+/* $27 */ db KEY_RESERVED
+/* $28 */ db KEY_RESERVED
+/* $29 */ db KEY_SPACE
+/* $2a */ db KEY_V
+/* $2b */ db KEY_F
+/* $2c */ db KEY_T
+/* $2d */ db KEY_R
+/* $2e */ db KEY_5
+/* $2f */ db KEY_RESERVED
+	
+/* $30 */ db KEY_RESERVED
+/* $31 */ db KEY_N
+/* $32 */ db KEY_B
+/* $33 */ db KEY_H
+/* $34 */ db KEY_G
+/* $35 */ db KEY_Y
+/* $36 */ db KEY_6
+/* $37 */ db KEY_RESERVED
+/* $38 */ db KEY_RESERVED
+/* $39 */ db KEY_RESERVED
+/* $3a */ db KEY_M
+/* $3b */ db KEY_J
+/* $3c */ db KEY_U
+/* $3d */ db KEY_7
+/* $3e */ db KEY_8
+/* $3f */ db KEY_RESERVED
+	
+/* $40 */ db KEY_RESERVED
+/* $41 */ db KEY_COMMA
+/* $42 */ db KEY_K
+/* $43 */ db KEY_I
+/* $44 */ db KEY_O
+/* $45 */ db KEY_0
+/* $46 */ db KEY_9
+/* $47 */ db KEY_RESERVED
+/* $48 */ db KEY_RESERVED
+/* $49 */ db KEY_DOT
+/* $4a */ db KEY_SLASH
+/* $4b */ db KEY_L
+/* $4c */ db KEY_SEMICOLON
+/* $4d */ db KEY_P
+/* $4e */ db KEY_MINUS
+/* $4f */ db KEY_RESERVED
+	
+/* $50 */ db KEY_RESERVED
+/* $51 */ db KEY_RESERVED
+/* $52 */ db KEY_APOSTROPHE
+/* $53 */ db KEY_RESERVED
+/* $54 */ db KEY_LEFTBRACE
+/* $55 */ db KEY_EQUAL
+/* $56 */ db KEY_RESERVED
+/* $57 */ db KEY_RESERVED
+/* $58 */ db KEY_CAPSLOCK
+/* $59 */ db KEY_RIGHTSHIFT
+/* $5a */ db KEY_ENTER
+/* $5b */ db KEY_RIGHTBRACE
+/* $5c */ db KEY_RESERVED
+/* $5d */ db KEY_BACKSLASH
+/* $5e */ db KEY_RESERVED
+/* $5f */ db KEY_RESERVED
+	
+/* $60 */ db KEY_RESERVED
+/* $61 */ db KEY_RESERVED
+/* $62 */ db KEY_RESERVED
+/* $63 */ db KEY_RESERVED
+/* $64 */ db KEY_RESERVED
+/* $65 */ db KEY_RESERVED
+/* $66 */ db KEY_BACKSPACE
+/* $67 */ db KEY_RESERVED
+/* $68 */ db KEY_RESERVED
+/* $69 */ db KEY_KP1
+/* $6a */ db KEY_RESERVED
+/* $6b */ db KEY_KP4
+/* $6c */ db KEY_KP7
+/* $6d */ db KEY_RESERVED
+/* $6e */ db KEY_RESERVED
+/* $6f */ db KEY_RESERVED
+	
+/* $70 */ db KEY_KP0
+/* $71 */ db KEY_KPDOT
+/* $72 */ db KEY_KP2
+/* $73 */ db KEY_KP5
+/* $74 */ db KEY_KP6
+/* $75 */ db KEY_KP8
+/* $76 */ db KEY_ESC
+/* $77 */ db KEY_NUMLOCK
+/* $78 */ db KEY_F11
+/* $79 */ db KEY_KPPLUS
+/* $7a */ db KEY_KP3
+/* $7b */ db KEY_KPMINUS
+/* $7c */ db KEY_KPASTERISK
+/* $7d */ db KEY_KP9
+/* $7e */ db KEY_SCROLLLOCK
+/* $7f */ db KEY_RESERVED
+keyboard_scan_code_set_2_key_code_table_end:
+/* $83 */ ;  KEY_F7

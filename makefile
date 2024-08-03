@@ -70,6 +70,7 @@ ASRCS:=							\
 	div.z80						\
 	input.z80					\
 	joypad.z80					\
+	keyboard.z80				\
 	memory.z80					\
 	mul.z80						\
 	print.z80					\
