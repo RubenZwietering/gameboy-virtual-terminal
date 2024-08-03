@@ -141,3 +141,143 @@ keyboard_scan_code_set_2_to_key_code_table:
 /* $7f */ db KEY_RESERVED
 keyboard_scan_code_set_2_key_code_table_end:
 /* $83 */ ;  KEY_F7
+
+keyboard_scan_code_extended_set_2_to_key_code_table:
+/* $e0 $00 */ db KEY_RESERVED
+/* $e0 $01 */ db KEY_RESERVED
+/* $e0 $02 */ db KEY_RESERVED
+/* $e0 $03 */ db KEY_RESERVED
+/* $e0 $04 */ db KEY_RESERVED
+/* $e0 $05 */ db KEY_RESERVED
+/* $e0 $06 */ db KEY_RESERVED
+/* $e0 $07 */ db KEY_RESERVED
+/* $e0 $08 */ db KEY_RESERVED
+/* $e0 $09 */ db KEY_RESERVED
+/* $e0 $0a */ db KEY_RESERVED
+/* $e0 $0b */ db KEY_RESERVED
+/* $e0 $0c */ db KEY_RESERVED
+/* $e0 $0d */ db KEY_RESERVED
+/* $e0 $0e */ db KEY_RESERVED
+/* $e0 $0f */ db KEY_RESERVED
+	
+/* $e0 $10 */ db KEY_RESERVED ; (multimedia) WWW search
+/* $e0 $11 */ db KEY_RIGHTALT
+/* $e0 $12 */ db KEY_RESERVED
+/* $e0 $13 */ db KEY_RESERVED
+/* $e0 $14 */ db KEY_RIGHTCTRL
+/* $e0 $15 */ db KEY_RESERVED ; (multimedia) previous track
+/* $e0 $16 */ db KEY_RESERVED
+/* $e0 $17 */ db KEY_RESERVED
+/* $e0 $18 */ db KEY_RESERVED ; (multimedia) WWW favourites
+/* $e0 $19 */ db KEY_RESERVED
+/* $e0 $1a */ db KEY_RESERVED
+/* $e0 $1b */ db KEY_RESERVED
+/* $e0 $1c */ db KEY_RESERVED
+/* $e0 $1d */ db KEY_RESERVED
+/* $e0 $1e */ db KEY_RESERVED
+/* $e0 $1f */ db KEY_RESERVED ; left GUI
+	
+/* $e0 $20 */ db KEY_RESERVED ; (multimedia) WWW refresh
+/* $e0 $21 */ db KEY_VOLUMEDOWN
+/* $e0 $22 */ db KEY_RESERVED
+/* $e0 $23 */ db KEY_MUTE
+/* $e0 $24 */ db KEY_RESERVED
+/* $e0 $25 */ db KEY_RESERVED
+/* $e0 $26 */ db KEY_RESERVED
+/* $e0 $27 */ db KEY_RESERVED ; right GUI
+/* $e0 $28 */ db KEY_RESERVED ; (multimedia) WWW stop
+/* $e0 $29 */ db KEY_RESERVED
+/* $e0 $2a */ db KEY_RESERVED
+/* $e0 $2b */ db KEY_RESERVED ; (multimedia) calculator
+/* $e0 $2c */ db KEY_RESERVED
+/* $e0 $2d */ db KEY_RESERVED
+/* $e0 $2e */ db KEY_RESERVED
+/* $e0 $2f */ db KEY_RESERVED ; apps
+	
+/* $e0 $30 */ db KEY_RESERVED ; (multimedia) WWW forward
+/* $e0 $31 */ db KEY_RESERVED
+/* $e0 $32 */ db KEY_VOLUMEUP
+/* $e0 $33 */ db KEY_RESERVED
+/* $e0 $34 */ db KEY_RESERVED ; (multimedia) play/pause
+/* $e0 $35 */ db KEY_RESERVED
+/* $e0 $36 */ db KEY_RESERVED
+/* $e0 $37 */ db KEY_RESERVED ; (ACPI) power
+/* $e0 $38 */ db KEY_RESERVED ; (multimedia) WWW back
+/* $e0 $39 */ db KEY_RESERVED
+/* $e0 $3a */ db KEY_RESERVED ; (multimedia) WWW home
+/* $e0 $3b */ db KEY_RESERVED ; (multimedia) stop
+/* $e0 $3c */ db KEY_RESERVED
+/* $e0 $3d */ db KEY_RESERVED
+/* $e0 $3e */ db KEY_RESERVED
+/* $e0 $3f */ db KEY_RESERVED ; (ACPI) sleep
+	
+/* $e0 $40 */ db KEY_RESERVED ; (multimedia) my computer
+/* $e0 $41 */ db KEY_RESERVED
+/* $e0 $42 */ db KEY_RESERVED
+/* $e0 $43 */ db KEY_RESERVED
+/* $e0 $44 */ db KEY_RESERVED
+/* $e0 $45 */ db KEY_RESERVED
+/* $e0 $46 */ db KEY_RESERVED
+/* $e0 $47 */ db KEY_RESERVED
+/* $e0 $48 */ db KEY_RESERVED ; (multimedia) email
+/* $e0 $49 */ db KEY_RESERVED
+/* $e0 $4a */ db KEY_KPSLASH
+/* $e0 $4b */ db KEY_RESERVED
+/* $e0 $4c */ db KEY_RESERVED
+/* $e0 $4d */ db KEY_RESERVED ; (multimedia) next track
+/* $e0 $4e */ db KEY_RESERVED
+/* $e0 $4f */ db KEY_RESERVED
+	
+/* $e0 $50 */ db KEY_RESERVED ; (multimedia) media select
+/* $e0 $51 */ db KEY_RESERVED
+/* $e0 $52 */ db KEY_RESERVED
+/* $e0 $53 */ db KEY_RESERVED
+/* $e0 $54 */ db KEY_RESERVED
+/* $e0 $55 */ db KEY_RESERVED
+/* $e0 $56 */ db KEY_RESERVED
+/* $e0 $57 */ db KEY_RESERVED
+/* $e0 $58 */ db KEY_RESERVED
+/* $e0 $59 */ db KEY_RESERVED
+/* $e0 $5a */ db KEY_KPENTER
+/* $e0 $5b */ db KEY_RESERVED
+/* $e0 $5c */ db KEY_RESERVED
+/* $e0 $5d */ db KEY_RESERVED
+/* $e0 $5e */ db KEY_RESERVED ; (ACPI) wake
+/* $e0 $5f */ db KEY_RESERVED
+	
+/* $e0 $60 */ db KEY_RESERVED
+/* $e0 $61 */ db KEY_RESERVED
+/* $e0 $62 */ db KEY_RESERVED
+/* $e0 $63 */ db KEY_RESERVED
+/* $e0 $64 */ db KEY_RESERVED
+/* $e0 $65 */ db KEY_RESERVED
+/* $e0 $66 */ db KEY_RESERVED
+/* $e0 $67 */ db KEY_RESERVED
+/* $e0 $68 */ db KEY_RESERVED
+/* $e0 $69 */ db KEY_END
+/* $e0 $6a */ db KEY_RESERVED
+/* $e0 $6b */ db KEY_LEFT
+/* $e0 $6c */ db KEY_HOME
+/* $e0 $6d */ db KEY_RESERVED
+/* $e0 $6e */ db KEY_RESERVED
+/* $e0 $6f */ db KEY_RESERVED
+	
+/* $e0 $70 */ db KEY_INSERT
+/* $e0 $71 */ db KEY_DELETE
+/* $e0 $72 */ db KEY_DOWN
+/* $e0 $73 */ db KEY_RESERVED
+/* $e0 $74 */ db KEY_RIGHT
+/* $e0 $75 */ db KEY_UP
+/* $e0 $76 */ db KEY_RESERVED
+/* $e0 $77 */ db KEY_RESERVED
+/* $e0 $78 */ db KEY_RESERVED
+/* $e0 $79 */ db KEY_RESERVED
+/* $e0 $7a */ db KEY_PAGEDOWN
+/* $e0 $7b */ db KEY_RESERVED
+/* $e0 $7c */ db KEY_RESERVED
+/* $e0 $7d */ db KEY_PAGEUP
+/* $e0 $7e */ db KEY_RESERVED
+/* $e0 $7f */ db KEY_RESERVED
+
+/* $e0 $12 $e0 $7c */ ; KEY_SYSRQ ; print screen
+/* $e1 $14 $77 $e1 $f0 $14 $f0 $77 */ ; KEY_PAUSE
