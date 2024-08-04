@@ -1,5 +1,73 @@
 include "keyboard.inc"
 
+export keyboard_packet_to_scan_code
+
+section "keyboard functions", romx
+; keyboard_packet_to_scan_code
+;
+; input:
+; - `de` : packet = %0ddddddd %00000dp1
+;
+; where:
+; 	bits are in reverse order,
+; 	start bit = always 0,
+; 	d = data bit,
+; 	5 times 0 bit for padding of 11 bit packet,
+; 	p = parity bit,
+; 	stop bit = always 1
+;
+; returns:
+; - `a` : scan code, 0 means broken packet
+;
+; destroys `f`, `bc`, `de`
+keyboard_packet_to_scan_code:
+	xor a 		; bit count
+	ld c, a 	; 0
+	ld b, a 	; scan code
+	
+	swap e 		; %0dp10000
+	sla e 		; %dp100000, c=0
+	DPUTSCJP c, "keyboard: padding bit 4 was not zero"
+	jr c, .broken_packet
+	
+	sla d 		; %ddddddd0, c=0
+	DPUTSCJP c, "keyboard: start bit was not zero"
+	jr c, .broken_packet
+
+	sla d 		; %dddddd00, c=d0
+	rr b 		; %d0000000
+	sla d 		; %ddddd000, c=d1
+	rr b 		; %dd000000
+	sla d 		; %dddd0000, c=d2
+	rr b 		; %ddd00000
+	sla d 		; %ddd00000, c=d3
+	rr b 		; %dddd0000
+	sla d 		; %dd000000, c=d4
+	rr b 		; %ddddd000
+	sla d 		; %d0000000, c=d5
+	rr b 		; %dddddd00
+	sla d 		; %00000000, c=d6
+	rr b 		; %ddddddd0
+	sla e 		; %p1000000, c=d7
+	rr b 		; %dddddddd
+
+	sla e 		; %10000000, c=p
+	; check parity
+	sla e 		; %00000000, c=1
+	DPUTSCJP nc, "keyboard: stop bit was not one"
+	jr nc, .broken_packet
+	DPUTSCJP nz, "keyboard: padding bit 0-3 was not zero"
+	jr nz, .broken_packet
+
+	ld a, b
+	ret
+
+	.broken_packet
+	xor a
+	ret
+; keyboard_packet_to_scan_code
+
+
 section "keycode to ascii translation tables", romx, align[8]
 keycode_base_case_to_ascii_table:
 /* KEY_RESERVED          */ db   0
