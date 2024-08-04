@@ -1,6 +1,13 @@
 if !def(KEYBOARD_INC)
 def KEYBOARD_INC equ 1
 
+def KEYBOARD_STATEB_KEY_DOWN 	equ 0
+def KEYBOARD_STATEB_EXTENDED 	equ 1
+def KEYBOARD_STATEB_EXTENDED1 	equ 2
+
+def KEYBOARD_STATEF_KEY_DOWN 	equ (1 << KEYBOARD_STATEB_KEY_DOWN)
+def KEYBOARD_STATEF_EXTENDED 	equ (1 << KEYBOARD_STATEB_EXTENDED)
+
 ; https://github.com/torvalds/linux/blob/master/include/uapi/linux/input-event-codes.h
 
 def KEY_RESERVED          equ 0
