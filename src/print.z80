@@ -821,6 +821,11 @@ vprintf:
 		ld a, [bc]
 		ld e, a
 		inc bc
+		ld a, [bc]
+		or a
+		jr z, .precision_specifier_asterisk_smaller_than_256
+			ld e, 255
+		.precision_specifier_asterisk_smaller_than_256
 		inc bc
 
 		ld a, [hli]
@@ -833,17 +838,21 @@ vprintf:
 	.precision_specifier_digit
 		push bc
 
-		; e = e * 10 + a
-		ld b, a
-		ld a, e
-		ld c, a
+		ld b, a 		; digit
+		ld a, e 		; precision
+
+		cp 26
+		jr nc, .precision_specifier_digit_max_value
+
 		add a
 		add a
-		add c
-		add a
-		add b
+		add e
+		add a 			; a = precision * 10
+		add b 			; a = precision * 10 + digit
+		jr c, .precision_specifier_digit_max_value
 		ld e, a
 
+		.precision_specifier_digit_continue
 		pop bc
 
 		ld a, [hli]
@@ -856,6 +865,10 @@ vprintf:
 		jr c, .precision_specifier_digit
 		add "0"
 		jp .exit_precision_specifier
+
+	.precision_specifier_digit_max_value
+		ld e, 255
+		jr .precision_specifier_digit_continue
 
 	.conversion_c
 		push hl
