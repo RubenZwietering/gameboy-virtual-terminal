@@ -6,6 +6,12 @@ export _print_binaryh
 export print_binaryh
 export _print_binary
 export print_binary
+export _print_hexadecimalh
+export print_hexadecimalh
+export _print_hexadecimal
+export print_hexadecimal
+export _print_hexadecimall
+export print_hexadecimall
 export _print_string
 export print_string
 export _vprintf
@@ -274,6 +280,246 @@ print_binary:
 	jp print_binaryh
 ; print_binary
 ; _print_binary
+
+
+; _print_hexadecimalh
+; 
+; description:
+; print the hexadecimal representation of a 8 bit value with precision
+; 
+; c function signiature:
+; int print_hexadecimalh(unsigned char precision, unsigned char hexadecimal);
+;
+; input:
+; - `a` : precision
+; - `e` : hexadecimal
+;
+; returns:
+; - `bc` : TODO: number of characters written
+;
+; destroys `af`, `bc`, `de`, `hl`
+_print_hexadecimalh:
+	; fallthrough
+
+; print_hexadecimalh
+;
+; input:
+; - `a` : precision
+; - `e` : hexadecimal
+;
+; returns:
+; - `bc` : TODO: number of characters written
+;
+; destroys `af`, `bc`, `de`, `hl`
+print_hexadecimalh:
+	cp 3
+	jr nc, .extra_padding
+	ld d, a
+
+	.print_hex
+		ld a, e
+		and $f0
+		jr nz, .high_nibble_not_zero
+			ld a, d
+			cp 2
+			jr c, .no_high_nibble
+			xor a
+		.high_nibble_not_zero
+		swap a
+		ld l, a
+		ld h, high(hex_map)
+		ld a, [hl]
+
+		push de
+		call putchar
+		pop de
+
+		.no_high_nibble
+		ld a, e
+		and $0f
+		jr nz, .low_nibble_not_zero
+			cp d
+			ret z
+		.low_nibble_not_zero
+		ld l, a
+		ld h, high(hex_map)
+		ld a, [hl]
+		jp putchar
+
+	.extra_padding
+		push de
+
+		sub 2
+		ld l, a
+		ld h, "0" ; TODO: sign extend?
+
+		.extra_padding_loop
+			ld a, h
+			push hl
+			call putchar
+			pop hl
+			dec l
+			jr nz, .extra_padding_loop
+
+		pop de
+		ld d, 2
+		jr .print_hex
+; print_hexadecimalh
+; _print_hexadecimalh
+
+
+; _print_hexadecimal
+; 
+; description:
+; print the hexadecimal representation of a 16 bit value with precision
+; 
+; c function signiature:
+; int print_hexadecimal(unsigned char precision, unsigned int hexadecimal);
+;
+; input:
+; - `a`  : precision
+; - `de` : hexadecimal
+;
+; returns:
+; - `bc` : TODO: number of characters written
+;
+; destroys `af`, `bc`, `de`, `hl`
+_print_hexadecimal:
+	; fallthrough
+
+; print_hexadecimal
+;
+; input:
+; - `a`  : precision TODO: 16 bit
+; - `de` : hexadecimal
+;
+; returns:
+; - `bc` : TODO: number of characters written
+;
+; destroys `af`, `bc`, `de`, `hl`
+print_hexadecimal:
+	cp 5
+	jr nc, .extra_padding 
+
+	.print_hex
+
+	ld l, d
+	ld d, a
+	push de
+	ld e, l
+	
+	sub 2 ; jump if a > 2
+	jr nc, .bigger_than_2
+		xor a ; ld a, 0
+	.bigger_than_2
+
+	call print_hexadecimalh
+	pop de
+
+	ld a, d
+	cp 3 ; jump if a <= 2
+	jr c, .smaller_than_3
+		ld a, 2
+	.smaller_than_3
+
+	jp print_hexadecimalh
+
+	.extra_padding
+		push de
+		sub 4
+		ld l, a
+		ld h, "0" ; TODO: sign extend?
+
+		.extra_padding_loop
+			push hl
+			ld a, h
+			call putchar
+			pop hl
+			dec l
+			jr nz, .extra_padding_loop
+
+		ld a, 4
+		pop de
+		jr .print_hex
+; print_hexadecimal
+; _print_hexadecimal
+
+
+; _print_hexadecimall
+; 
+; description:
+; print the hexadecimal representation of a 32 bit value with precision
+; 
+; c function signiature:
+; int print_hexadecimall(unsigned char precision, unsigned long hexadecimal);
+;
+; input:
+; - `a`    : precision
+; - `debc` : hexadecimal
+;
+; returns:
+; - `bc` : TODO: number of characters written
+;
+; destroys `af`, `bc`, `de`, `hl`
+_print_hexadecimall:
+	; fallthrough
+
+; print_hexadecimall
+;
+; input:
+; - `a`    : precision TODO: 16 bit
+; - `debc` : hexadecimal
+;
+; returns:
+; - `bc` : TODO: number of characters written
+;
+; destroys `af`, `bc`, `de`, `hl`
+print_hexadecimall:
+	cp 9
+	jr nc, .extra_padding 
+
+	.print_hex
+
+	push af
+	push bc
+	
+	sub 4 ; jump if a > 4
+	jr nc, .bigger_than_4
+		xor a ; ld a, 0
+	.bigger_than_4
+
+	call print_hexadecimal
+	pop de
+	pop af
+
+	cp 5 ; jump if a <= 4
+	jr c, .smaller_than_5
+		ld a, 4
+	.smaller_than_5
+
+	jp print_hexadecimal
+
+	.extra_padding
+		push de
+		push bc
+		sub 8
+		ld l, a
+		ld h, "0" ; TODO: sign extend?
+
+		.extra_padding_loop
+			push hl
+			ld a, h
+			call putchar
+			pop hl
+			dec l
+			jr nz, .extra_padding_loop
+
+		ld a, 8
+		pop bc
+		pop de
+		jr .print_hex
+; print_hexadecimall
+; _print_hexadecimall
 
 
 ; _print_hex
