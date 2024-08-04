@@ -25,15 +25,33 @@ macro PRINTF
 		def PRINTF_FMT_STR equs "\1"
 	endc
 
+	def FIRST_AF_NARG = 0
+	def FIRST_BC_NARG = 0
+	def FIRST_DE_NARG = 0
 	def FIRST_HL_NARG = 0
 
 	for N, 2, _NARG + 1
-		if (strlen("\<{d:N}>") == 1 \
-			 &&(strcmp(strlwr("\<{d:N}>"), "h") == 0 \
-			 || strcmp(strlwr("\<{d:N}>"), "l") == 0)\
-		)||(strlen("\<{d:N}>") == 2 && strcmp(strlwr("\<{d:N}>"), "hl") == 0)
-			def FIRST_HL_NARG = _NARG - N
-			break
+		def N = _NARG - N + 2 ; reverse loop
+		if strlen("\<{d:N}>") == 1
+			if strcmp(strlwr("\<{d:N}>"), "a") == 0 || strcmp(strlwr("\<{d:N}>"), "f") == 0
+				def FIRST_AF_NARG = _NARG - N
+			elif strcmp(strlwr("\<{d:N}>"), "b") == 0 || strcmp(strlwr("\<{d:N}>"), "c") == 0
+				def FIRST_BC_NARG = _NARG - N
+			elif strcmp(strlwr("\<{d:N}>"), "d") == 0 || strcmp(strlwr("\<{d:N}>"), "e") == 0
+				def FIRST_DE_NARG = _NARG - N
+			elif strcmp(strlwr("\<{d:N}>"), "h") == 0 || strcmp(strlwr("\<{d:N}>"), "l") == 0
+				def FIRST_HL_NARG = _NARG - N
+			endc
+		elif strlen("\<{d:N}>") == 2
+			if strcmp(strlwr("\<{d:N}>"), "af") == 0
+				def FIRST_AF_NARG = _NARG - N
+			elif strcmp(strlwr("\<{d:N}>"), "bc") == 0
+				def FIRST_BC_NARG = _NARG - N
+			elif strcmp(strlwr("\<{d:N}>"), "de") == 0
+				def FIRST_DE_NARG = _NARG - N
+			elif strcmp(strlwr("\<{d:N}>"), "hl") == 0
+				def FIRST_HL_NARG = _NARG - N
+			endc
 		endc
 	endr
 
@@ -49,102 +67,86 @@ macro PRINTF
 		 || strcmp(strlwr("\1"), "hl") == 0)
 			push \1
 		else
-			if FIRST_HL_NARG < _NARG
-				if strlen("\1") == 1 \
-				&&(strcmp(strlwr("\1"), "a") == 0 \
-				|| strcmp(strlwr("\1"), "b") == 0 \
-				|| strcmp(strlwr("\1"), "c") == 0 \
-				|| strcmp(strlwr("\1"), "d") == 0 \
-				|| strcmp(strlwr("\1"), "e") == 0 \
-				|| strcmp(strlwr("\1"), "h") == 0 \
-				|| strcmp(strlwr("\1"), "l") == 0)
+			if !(FIRST_AF_NARG < _NARG)
+				def SAVE_AF equ 1
+			endc
+			if !(FIRST_BC_NARG < _NARG)
+				def SAVE_BC equ 1
+			endc
+			if !(FIRST_DE_NARG < _NARG)
+				def SAVE_DE equ 1
+			endc
+			if !(FIRST_HL_NARG < _NARG)
+				def SAVE_HL equ 1
+			endc
+
+			if strlen("\1") == 1 \
+			 &&(strcmp(strlwr("\1"), "a") == 0 \
+			 || strcmp(strlwr("\1"), "b") == 0 \
+			 || strcmp(strlwr("\1"), "c") == 0 \
+			 || strcmp(strlwr("\1"), "d") == 0 \
+			 || strcmp(strlwr("\1"), "e") == 0 \
+			 || strcmp(strlwr("\1"), "h") == 0 \
+			 || strcmp(strlwr("\1"), "l") == 0)
+				if !def(SAVE_HL)
 					if strcmp(strlwr("\1"), "l") != 0
 						ld l, \1
 					endc
 					ld h, 0
-				elif strlen("\1") == 1  && strcmp(strlwr("\1"), "f") == 0
-					push af
-					pop hl
-					ld h, 0
-				elif strlen("\1") == 2 && strcmp(strlwr("\1"), "sp") == 0
-					push af
-					ld hl, sp + (_NARG * 2)
-					pop af
-				elif strlen("\1") == 2 && strcmp(strlwr("\1"), "pc") == 0
-					push af
-					call ld_hl_pc
-					pop af
-				elif strlen("\1") == 2 && strcmp(strlwr("\1"), "zf") == 0
-					; bit 7
-					ld hl, 1
-					jr z, .zero_flag_set\@
-						ld l, 0
-					.zero_flag_set\@
-				elif strlen("\1") == 2 && strcmp(strlwr("\1"), "nf") == 0
-					; bit 6
-					push af
-					ld hl, sp+0
-					ld a, [hl]
-					rlca ; bit 7
-					rlca ; bit 0
-					and 1
-					ld h, 0
-					ld l, a
-					pop af
-				elif strlen("\1") == 2 && strcmp(strlwr("\1"), "hf") == 0
-					; bit 5
-					push af
-					ld hl, sp+0
-					ld a, [hl]
-					rra ; bit 4
-					swap a ; bit 0
-					and 1
-					ld h, 0
-					ld l, a
-					pop af
-				elif strlen("\1") == 2 && strcmp(strlwr("\1"), "cf") == 0
-					; bit 4
-					ld hl, 1
-					jr c, .carry_flag_set\@
-						ld l, 0
-					.carry_flag_set\@
-				elif strin("\1", "\"") != 0 		; check if string constant
-					LD_STRING hl, \1
+					push hl
 				else
-					ld hl, \1
-				endc
-				push hl
-			else
-				dec sp ; room for hl
-				dec sp
-
-				push af
-				push hl
-
-				if strlen("\1") == 1 \
-				 &&(strcmp(strlwr("\1"), "a") == 0 \
-				 || strcmp(strlwr("\1"), "b") == 0 \
-				 || strcmp(strlwr("\1"), "c") == 0 \
-				 || strcmp(strlwr("\1"), "d") == 0 \
-				 || strcmp(strlwr("\1"), "e") == 0 \
-				 || strcmp(strlwr("\1"), "h") == 0 \
-				 || strcmp(strlwr("\1"), "l") == 0)
+					dec sp ; room for hl
+					dec sp
+	
+					push af
+					push hl
+ 
 					if strcmp(strlwr("\1"), "a") != 0
 						ld a, \1
 					endc
 					ld hl, sp+4
 					ld [hli], a
-					xor a
-					ld [hl], a
-				elif strlen("\1") == 1 && strcmp(strlwr("\1"), "f") == 0
+					ld [hl], 0
+					
+					pop hl
+					pop af
+				endc
+			elif strlen("\1") == 1 && strcmp(strlwr("\1"), "f") == 0
+				if !def(SAVE_HL)
+					push af
+					pop hl
+					ld h, 0
+					push hl
+				else
+					dec sp ; room for hl
+					dec sp
+
+					push af
+					push hl
+
 					ld hl, sp+2
 					ld a, [hl]
 					ld hl, sp+4
 					ld [hli], a
-					xor a
-					ld [hl], a
-				elif strlen("\1") == 2 && strcmp(strlwr("\1"), "sp") == 0
+					ld [hl], 0
+					
+					pop hl
+					pop af
+				endc
+			elif strlen("\1") == 2 && strcmp(strlwr("\1"), "sp") == 0
+				if !def(SAVE_HL)
+					push af
+					ld hl, sp + (_NARG * 2)
+					pop af
+					push hl
+				else
+					dec sp ; room for hl
+					dec sp
+
+					push af
+					push hl
 					push de
+
 					ld hl, sp+6 + (_NARG * 2)
 					LD_R16_R16 de, hl
 	
@@ -152,27 +154,79 @@ macro PRINTF
 					ld a, e
 					ld [hli], a
 					ld [hl], d
+
 					pop de
-				elif strlen("\1") == 2 && strcmp(strlwr("\1"), "pc") == 0
+					pop hl
+					pop af
+				endc
+			elif strlen("\1") == 2 && strcmp(strlwr("\1"), "pc") == 0
+				if !def(SAVE_HL)
+					push af
+					call ld_hl_pc
+					pop af
+					push hl
+				else
+					dec sp ; room for hl
+					dec sp
+
+					push af
+					push hl
 					push de
+
 					call ld_de_pc
 					ld hl, sp+6
 					ld a, e
 					ld [hli], a
 					ld [hl], d
+
 					pop de
-				elif strlen("\1") == 2 && strcmp(strlwr("\1"), "zf") == 0
-					; bit 7
+					pop hl
+					pop af
+				endc
+			elif strlen("\1") == 2 && strcmp(strlwr("\1"), "zf") == 0 ; bit 7
+				if !def(SAVE_HL)
+					ld hl, 1
+					jr z, .zero_flag_set\@
+						ld l, 0
+					.zero_flag_set\@
+					push hl
+				else
+					dec sp ; room for hl
+					dec sp
+
+					push af
+					push hl
+
 					ld a, 1
 					jr z, .zero_flag_set\@
 						xor a
 					.zero_flag_set\@
 					ld hl, sp+4
 					ld [hli], a
-					xor a
-					ld [hl], a
-				elif strlen("\1") == 2 && strcmp(strlwr("\1"), "nf") == 0
-					; bit 6
+					ld [hl], 0
+
+					pop hl
+					pop af
+				endc
+			elif strlen("\1") == 2 && strcmp(strlwr("\1"), "nf") == 0 ; bit 6
+				if !def(SAVE_HL)
+					push af
+					ld hl, sp+0
+					ld a, [hl]
+					rlca ; bit 7
+					rlca ; bit 0
+					and 1
+					ld l, a
+					ld h, 0
+					pop af
+					push hl
+				else
+					dec sp ; room for hl
+					dec sp
+
+					push af
+					push hl
+
 					ld hl, sp+2
 					ld a, [hl]
 					rlca ; bit 7
@@ -180,10 +234,30 @@ macro PRINTF
 					and 1
 					ld hl, sp+4
 					ld [hli], a
-					xor a
-					ld [hl], a
-				elif strlen("\1") == 2 && strcmp(strlwr("\1"), "hf") == 0
-					; bit 5
+					ld [hl], 0
+
+					pop hl
+					pop af
+				endc
+			elif strlen("\1") == 2 && strcmp(strlwr("\1"), "hf") == 0 ; bit 5
+				if !def(SAVE_HL)
+					push af
+					ld hl, sp+0
+					ld a, [hl]
+					rra ; bit 4
+					swap a ; bit 0
+					and 1
+					ld l, a
+					ld h, 0
+					pop af
+					push hl
+				else
+					dec sp ; room for hl
+					dec sp
+
+					push af
+					push hl
+
 					ld hl, sp+2
 					ld a, [hl]
 					rra ; bit 4
@@ -191,33 +265,86 @@ macro PRINTF
 					and 1
 					ld hl, sp+4
 					ld [hli], a
-					xor a
-					ld [hl], a
-				elif strlen("\1") == 2 && strcmp(strlwr("\1"), "cf") == 0
-					; bit 4
+					ld [hl], 0
+
+					pop hl
+					pop af
+				endc
+			elif strlen("\1") == 2 && strcmp(strlwr("\1"), "cf") == 0 ; bit 4
+				if !def(SAVE_HL)
+					ld hl, 1
+					jr c, .carry_flag_set\@
+						ld l, 0
+					.carry_flag_set\@
+					push hl
+				else
+					dec sp ; room for hl
+					dec sp
+
+					push af
+					push hl
+
 					ld a, 0
 					adc a
 					ld hl, sp+4
 					ld [hli], a
-					xor a
-					ld [hl], a
-				elif strin("\1", "\"") != 0 		; check if string constant
+					ld [hl], 0
+
+					pop hl
+					pop af
+				endc
+			elif strin("\1", "\"") != 0 		; check if string constant
+				if !def(SAVE_HL)
+					LD_STRING hl, \1
+					push hl
+				else
+					dec sp ; room for hl
+					dec sp
+
+					push af
+					push hl
+
 					ld hl, sp+4
 					STRING __printf_arg_str\@, \1
 					ld a, low(__printf_arg_str\@)
 					ld [hli], a
-					ld a, high(__printf_arg_str\@)
-					ld [hl], a
+					ld [hl], high(__printf_arg_str\@)
+
+					pop hl
+					pop af
+				endc
+			else
+				if !def(SAVE_HL)
+					ld hl, \1
+					push hl
 				else
+					dec sp ; room for hl
+					dec sp
+
+					push af
+					push hl
+
 					ld hl, sp+4
 					ld a, low(\1)
 					ld [hli], a
-					ld a, high(\1)
-					ld [hl], a
+					ld [hl], high(\1)
+
+					pop hl
+					pop af
 				endc
-					
-				pop hl
-				pop af
+			endc
+
+			if def(SAVE_HL)
+				purge SAVE_HL
+			endc
+			if def(SAVE_DE)
+				purge SAVE_DE
+			endc
+			if def(SAVE_BC)
+				purge SAVE_BC
+			endc
+			if def(SAVE_AF)
+				purge SAVE_AF
 			endc
 		endc
 
@@ -232,9 +359,12 @@ macro PRINTF
 	call vprintf
 	add	sp, FORMAT_NARG * 2
 
-	purge PRINTF_FMT_STR
-	purge FIRST_HL_NARG
 	purge FORMAT_NARG
+	purge FIRST_HL_NARG
+	purge FIRST_DE_NARG
+	purge FIRST_BC_NARG
+	purge FIRST_AF_NARG
+	purge PRINTF_FMT_STR
 endm
 ; PRINTF
 
