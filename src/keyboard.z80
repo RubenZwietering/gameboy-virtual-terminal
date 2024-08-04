@@ -1,7 +1,272 @@
 include "keyboard.inc"
 
-section "keyboard scan code set 2 to key code translation table", romx, align[8]
-keyboard_scan_code_set_2_to_key_code_table:
+section "keycode to ascii translation tables", romx, align[8]
+keycode_base_case_to_ascii_table:
+/* KEY_RESERVED          */ db   0
+/* KEY_ESC               */ db $1b  ; "\e"
+/* KEY_1                 */ db  "1"
+/* KEY_2                 */ db  "2"
+/* KEY_3                 */ db  "3"
+/* KEY_4                 */ db  "4"
+/* KEY_5                 */ db  "5"
+/* KEY_6                 */ db  "6"
+/* KEY_7                 */ db  "7"
+/* KEY_8                 */ db  "8"
+/* KEY_9                 */ db  "9"
+/* KEY_0                 */ db  "0"
+/* KEY_MINUS             */ db  "-"
+/* KEY_EQUAL             */ db  "="
+/* KEY_BACKSPACE         */ db $7f
+/* KEY_TAB               */ db "\t"
+/* KEY_Q                 */ db  "q"
+/* KEY_W                 */ db  "w"
+/* KEY_E                 */ db  "e"
+/* KEY_R                 */ db  "r"
+/* KEY_T                 */ db  "t"
+/* KEY_Y                 */ db  "y"
+/* KEY_U                 */ db  "u"
+/* KEY_I                 */ db  "i"
+/* KEY_O                 */ db  "o"
+/* KEY_P                 */ db  "p"
+/* KEY_LEFTBRACE         */ db  "["
+/* KEY_RIGHTBRACE        */ db  "]"
+/* KEY_ENTER             */ db "\r"
+/* KEY_LEFTCTRL          */ db   0
+/* KEY_A                 */ db  "a"
+/* KEY_S                 */ db  "s"
+/* KEY_D                 */ db  "d"
+/* KEY_F                 */ db  "f"
+/* KEY_G                 */ db  "g"
+/* KEY_H                 */ db  "h"
+/* KEY_J                 */ db  "j"
+/* KEY_K                 */ db  "k"
+/* KEY_L                 */ db  "l"
+/* KEY_SEMICOLON         */ db  ";"
+/* KEY_APOSTROPHE        */ db  "'"
+/* KEY_GRAVE             */ db  "`"
+/* KEY_LEFTSHIFT         */ db   0
+/* KEY_BACKSLASH         */ db "\\"
+/* KEY_Z                 */ db  "z"
+/* KEY_X                 */ db  "x"
+/* KEY_C                 */ db  "c"
+/* KEY_V                 */ db  "v"
+/* KEY_B                 */ db  "b"
+/* KEY_N                 */ db  "n"
+/* KEY_M                 */ db  "m"
+/* KEY_COMMA             */ db  ","
+/* KEY_DOT               */ db  "."
+/* KEY_SLASH             */ db  "/"
+/* KEY_RIGHTSHIFT        */ db   0
+/* KEY_KPASTERISK        */ db  "*"
+/* KEY_LEFTALT           */ db   0
+/* KEY_SPACE             */ db  " "
+/* KEY_CAPSLOCK          */ db   0
+/* KEY_F1                */ db   0  ; "\e[11~"
+/* KEY_F2                */ db   0  ; "\e[12~"
+/* KEY_F3                */ db   0  ; "\e[13~"
+/* KEY_F4                */ db   0  ; "\e[14~"
+/* KEY_F5                */ db   0  ; "\e[15~"
+/* KEY_F6                */ db   0  ; "\e[17~"
+/* KEY_F7                */ db   0  ; "\e[18~"
+/* KEY_F8                */ db   0  ; "\e[19~"
+/* KEY_F9                */ db   0  ; "\e[20~"
+/* KEY_F10               */ db   0  ; "\e[21~"
+/* KEY_NUMLOCK           */ db   0
+/* KEY_SCROLLLOCK        */ db   0
+/* KEY_KP7               */ db  "7"
+/* KEY_KP8               */ db  "8"
+/* KEY_KP9               */ db  "9"
+/* KEY_KPMINUS           */ db  "-"
+/* KEY_KP4               */ db  "4"
+/* KEY_KP5               */ db  "5"
+/* KEY_KP6               */ db  "6"
+/* KEY_KPPLUS            */ db  "+"
+/* KEY_KP1               */ db  "1"
+/* KEY_KP2               */ db  "2"
+/* KEY_KP3               */ db  "3"
+/* KEY_KP0               */ db  "0"
+/* KEY_KPDOT             */ db  "."
+/* 84                    */ db   0
+/* KEY_ZENKAKUHANKAKU    */ db   0
+/* KEY_102ND             */ db   0
+/* KEY_F11               */ db   0  ; "\e[23~"
+/* KEY_F12               */ db   0  ; "\e[24~"
+/* KEY_RO                */ db   0
+/* KEY_KATAKANA          */ db   0
+/* KEY_HIRAGANA          */ db   0
+/* KEY_HENKAN            */ db   0
+/* KEY_KATAKANAHIRAGANA  */ db   0
+/* KEY_MUHENKAN          */ db   0
+/* KEY_KPJPCOMMA         */ db   0
+/* KEY_KPENTER           */ db "\r"
+/* KEY_RIGHTCTRL         */ db   0
+/* KEY_KPSLASH           */ db  "/"
+/* KEY_SYSRQ             */ db   0
+/* KEY_RIGHTALT          */ db   0
+/* KEY_LINEFEED          */ db   0
+/* KEY_HOME              */ db   0  ; "\e[1~"
+/* KEY_UP                */ db   0  ; "\e[A"
+/* KEY_PAGEUP            */ db   0  ; "\e[5~"
+/* KEY_LEFT              */ db   0  ; "\e[D"
+/* KEY_RIGHT             */ db   0  ; "\e[C"
+/* KEY_END               */ db   0  ; "\e[4~"
+/* KEY_DOWN              */ db   0  ; "\e[B"
+/* KEY_PAGEDOWN          */ db   0  ; "\e[6~"
+/* KEY_INSERT            */ db   0  ; "\e[2~"
+/* KEY_DELETE            */ db   0  ; "\e[3~"
+/* KEY_MACRO             */ db   0
+/* KEY_MUTE              */ db   0
+/* KEY_VOLUMEDOWN        */ db   0
+/* KEY_VOLUMEUP          */ db   0
+/* KEY_POWER             */ db   0
+/* KEY_KPEQUAL           */ db  "="
+/* KEY_KPPLUSMINUS       */ db   0
+/* KEY_PAUSE             */ db   0
+/* KEY_SCALE             */ db   0
+/* KEY_KPCOMMA           */ db  ","
+/* KEY_HANGEUL/HANGEUL   */ db   0
+/* KEY_HANJA             */ db   0
+/* KEY_YEN               */ db   0
+/* KEY_LEFTMETA          */ db   0
+/* KEY_RIGHTMETA         */ db   0
+/* KEY_COMPOSE           */ db   0
+keycode_base_case_to_ascii_table_end:
+assert fail, (keycode_base_case_to_ascii_table_end - keycode_base_case_to_ascii_table == 128)
+
+keycode_upper_case_to_ascii_table:
+/* KEY_RESERVED          */ db   0
+/* KEY_ESC               */ db $1b  ; "\e"
+/* KEY_1                 */ db  "!"
+/* KEY_2                 */ db  "@"
+/* KEY_3                 */ db  "#"
+/* KEY_4                 */ db  "$"
+/* KEY_5                 */ db  "%"
+/* KEY_6                 */ db  "^"
+/* KEY_7                 */ db  "&"
+/* KEY_8                 */ db  "*"
+/* KEY_9                 */ db  "("
+/* KEY_0                 */ db  ")"
+/* KEY_MINUS             */ db  "_"
+/* KEY_EQUAL             */ db  "+"
+/* KEY_BACKSPACE         */ db $7f
+/* KEY_TAB               */ db   0  ; "\e\t"
+/* KEY_Q                 */ db  "Q"
+/* KEY_W                 */ db  "W"
+/* KEY_E                 */ db  "E"
+/* KEY_R                 */ db  "R"
+/* KEY_T                 */ db  "T"
+/* KEY_Y                 */ db  "Y"
+/* KEY_U                 */ db  "U"
+/* KEY_I                 */ db  "I"
+/* KEY_O                 */ db  "O"
+/* KEY_P                 */ db  "P"
+/* KEY_LEFTBRACE         */ db "\{"
+/* KEY_RIGHTBRACE        */ db "\}"
+/* KEY_ENTER             */ db "\r"
+/* KEY_LEFTCTRL          */ db   0
+/* KEY_A                 */ db  "A"
+/* KEY_S                 */ db  "S"
+/* KEY_D                 */ db  "D"
+/* KEY_F                 */ db  "F"
+/* KEY_G                 */ db  "G"
+/* KEY_H                 */ db  "H"
+/* KEY_J                 */ db  "J"
+/* KEY_K                 */ db  "K"
+/* KEY_L                 */ db  "L"
+/* KEY_SEMICOLON         */ db  ":"
+/* KEY_APOSTROPHE        */ db "\""
+/* KEY_GRAVE             */ db  "~"
+/* KEY_LEFTSHIFT         */ db   0
+/* KEY_BACKSLASH         */ db  "|"
+/* KEY_Z                 */ db  "Z"
+/* KEY_X                 */ db  "X"
+/* KEY_C                 */ db  "C"
+/* KEY_V                 */ db  "V"
+/* KEY_B                 */ db  "B"
+/* KEY_N                 */ db  "N"
+/* KEY_M                 */ db  "M"
+/* KEY_COMMA             */ db  "<"
+/* KEY_DOT               */ db  ">"
+/* KEY_SLASH             */ db  "?"
+/* KEY_RIGHTSHIFT        */ db   0
+/* KEY_KPASTERISK        */ db  "*"
+/* KEY_LEFTALT           */ db   0
+/* KEY_SPACE             */ db  " "
+/* KEY_CAPSLOCK          */ db   0
+/* KEY_F1                */ db   0  ; "\e[11;2~"
+/* KEY_F2                */ db   0  ; "\e[12;2~"
+/* KEY_F3                */ db   0  ; "\e[13;2~"
+/* KEY_F4                */ db   0  ; "\e[14;2~"
+/* KEY_F5                */ db   0  ; "\e[15;2~"
+/* KEY_F6                */ db   0  ; "\e[17;2~"
+/* KEY_F7                */ db   0  ; "\e[18;2~"
+/* KEY_F8                */ db   0  ; "\e[19;2~"
+/* KEY_F9                */ db   0  ; "\e[20;2~"
+/* KEY_F10               */ db   0  ; "\e[21;2~"
+/* KEY_NUMLOCK           */ db   0
+/* KEY_SCROLLLOCK        */ db   0
+/* KEY_KP7               */ db   0  ; "\e[7~"
+/* KEY_KP8               */ db   0  ; "\e[A"
+/* KEY_KP9               */ db   0  ; "\e[5~"
+/* KEY_KPMINUS           */ db  "-"
+/* KEY_KP4               */ db   0  ; "\e[D"
+/* KEY_KP5               */ db   0  ; "\e[G"
+/* KEY_KP6               */ db   0  ; "\e[C"
+/* KEY_KPPLUS            */ db  "+"
+/* KEY_KP1               */ db   0  ; "\e[8~"
+/* KEY_KP2               */ db   0  ; "\e[C"
+/* KEY_KP3               */ db   0  ; "\e[6~"
+/* KEY_KP0               */ db   0  ; "\e[2~"
+/* KEY_KPDOT             */ db   0  ; "\e[3~"
+/* 84                    */ db   0
+/* KEY_ZENKAKUHANKAKU    */ db   0
+/* KEY_102ND             */ db   0
+/* KEY_F11               */ db   0  ; "\e[23;2~"
+/* KEY_F12               */ db   0  ; "\e[24;2~"
+/* KEY_RO                */ db   0
+/* KEY_KATAKANA          */ db   0
+/* KEY_HIRAGANA          */ db   0
+/* KEY_HENKAN            */ db   0
+/* KEY_KATAKANAHIRAGANA  */ db   0
+/* KEY_MUHENKAN          */ db   0
+/* KEY_KPJPCOMMA         */ db   0
+/* KEY_KPENTER           */ db "\r"
+/* KEY_RIGHTCTRL         */ db   0
+/* KEY_KPSLASH           */ db  "/"
+/* KEY_SYSRQ             */ db   0
+/* KEY_RIGHTALT          */ db   0
+/* KEY_LINEFEED          */ db   0
+/* KEY_HOME              */ db   0  ; "\e[1;2~"
+/* KEY_UP                */ db   0  ; "\e[1;2A"
+/* KEY_PAGEUP            */ db   0  ; "\e[5;2~"
+/* KEY_LEFT              */ db   0  ; "\e[1;2D"
+/* KEY_RIGHT             */ db   0  ; "\e[1;2C"
+/* KEY_END               */ db   0  ; "\e[4;2~"
+/* KEY_DOWN              */ db   0  ; "\e[1;2B"
+/* KEY_PAGEDOWN          */ db   0  ; "\e[6;2~"
+/* KEY_INSERT            */ db   0  ; "\e[2;2~"
+/* KEY_DELETE            */ db   0  ; "\e[3;2~"
+/* KEY_MACRO             */ db   0
+/* KEY_MUTE              */ db   0
+/* KEY_VOLUMEDOWN        */ db   0
+/* KEY_VOLUMEUP          */ db   0
+/* KEY_POWER             */ db   0
+/* KEY_KPEQUAL           */ db  "="
+/* KEY_KPPLUSMINUS       */ db   0
+/* KEY_PAUSE             */ db   0
+/* KEY_SCALE             */ db   0
+/* KEY_KPCOMMA           */ db  ","
+/* KEY_HANGEUL/HANGEUL   */ db   0
+/* KEY_HANJA             */ db   0
+/* KEY_YEN               */ db   0
+/* KEY_LEFTMETA          */ db   0
+/* KEY_RIGHTMETA         */ db   0
+/* KEY_COMPOSE           */ db   0
+keycode_upper_case_to_ascii_table_end:
+assert fail, (keycode_upper_case_to_ascii_table_end - keycode_upper_case_to_ascii_table == 128)
+
+section "keyboard scan code set 2 to keycode translation table", romx, align[8]
+keyboard_scan_code_set_2_to_keycode_table:
 ; https://wiki.osdev.org/PS/2_Keyboard#Scan_Code_Set_2
 ; https://www.vetra.com/scancodes.html
 /* $00 */ db KEY_RESERVED
@@ -139,10 +404,11 @@ keyboard_scan_code_set_2_to_key_code_table:
 /* $7d */ db KEY_KP9
 /* $7e */ db KEY_SCROLLLOCK
 /* $7f */ db KEY_RESERVED
-keyboard_scan_code_set_2_key_code_table_end:
+keyboard_scan_code_set_2_to_keycode_table_end:
 /* $83 */ ;  KEY_F7
+assert fail, (keyboard_scan_code_set_2_to_keycode_table_end - keyboard_scan_code_set_2_to_keycode_table == 128)
 
-keyboard_scan_code_extended_set_2_to_key_code_table:
+keyboard_scan_code_extended_set_2_to_keycode_table:
 /* $e0 $00 */ db KEY_RESERVED
 /* $e0 $01 */ db KEY_RESERVED
 /* $e0 $02 */ db KEY_RESERVED
@@ -281,3 +547,5 @@ keyboard_scan_code_extended_set_2_to_key_code_table:
 
 /* $e0 $12 $e0 $7c */ ; KEY_SYSRQ ; print screen
 /* $e1 $14 $77 $e1 $f0 $14 $f0 $77 */ ; KEY_PAUSE
+keyboard_scan_code_extended_set_2_to_keycode_table_end:
+assert fail, (keyboard_scan_code_extended_set_2_to_keycode_table_end - keyboard_scan_code_extended_set_2_to_keycode_table == 128)
