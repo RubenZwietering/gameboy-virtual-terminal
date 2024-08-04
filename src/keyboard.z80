@@ -1,8 +1,32 @@
 include "keyboard.inc"
+include "input.inc"
 
+export keyboard_get_packet
 export keyboard_packet_to_scan_code
 
 section "keyboard functions", romx
+; keyboard_get_packet
+;
+; returns:
+; - `de` : packet
+;
+; destroys `af`, `b`, `hl`
+	keyboard_get_packet.pause
+	halt
+	nop ; halt bug
+keyboard_get_packet:
+	INPUT_BUFFER_UNREAD
+	cp 2
+	jr c, .pause
+
+	INPUT_BUFFER_POP
+	ld d, a
+	INPUT_BUFFER_POP
+	ld e, a
+	ret
+; keyboard_get_packet
+
+
 ; keyboard_packet_to_scan_code
 ;
 ; input:
