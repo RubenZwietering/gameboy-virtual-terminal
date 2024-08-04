@@ -28,7 +28,10 @@ macro PRINTF
 	def FIRST_HL_NARG = 0
 
 	for N, 2, _NARG + 1
-		if strlen("\<{d:N}>") == 2 && strcmp(strlwr("\<{d:N}>"), "hl") == 0
+		if (strlen("\<{d:N}>") == 1 \
+			 &&(strcmp(strlwr("\<{d:N}>"), "h") == 0 \
+			 || strcmp(strlwr("\<{d:N}>"), "l") == 0)\
+		)||(strlen("\<{d:N}>") == 2 && strcmp(strlwr("\<{d:N}>"), "hl") == 0)
 			def FIRST_HL_NARG = _NARG - N
 			break
 		endc
@@ -49,14 +52,16 @@ macro PRINTF
 			if FIRST_HL_NARG < _NARG
 				if strlen("\1") == 1 \
 				&&(strcmp(strlwr("\1"), "a") == 0 \
-				||	strcmp(strlwr("\1"), "b") == 0 \
+				|| strcmp(strlwr("\1"), "b") == 0 \
 				|| strcmp(strlwr("\1"), "c") == 0 \
 				|| strcmp(strlwr("\1"), "d") == 0 \
 				|| strcmp(strlwr("\1"), "e") == 0 \
 				|| strcmp(strlwr("\1"), "h") == 0 \
 				|| strcmp(strlwr("\1"), "l") == 0)
+					if strcmp(strlwr("\1"), "l") != 0
+						ld l, \1
+					endc
 					ld h, 0
-					ld l, \1
 				elif strlen("\1") == 1  && strcmp(strlwr("\1"), "f") == 0
 					push af
 					pop hl
@@ -80,9 +85,8 @@ macro PRINTF
 					push af
 					ld hl, sp+0
 					ld a, [hl]
-					rra ; bit 5
-					rra ; bit 4
-					swap a ; bit 1
+					rlca ; bit 7
+					rlca ; bit 0
 					and 1
 					ld h, 0
 					ld l, a
@@ -93,7 +97,7 @@ macro PRINTF
 					ld hl, sp+0
 					ld a, [hl]
 					rra ; bit 4
-					swap a ; bit 1
+					swap a ; bit 0
 					and 1
 					ld h, 0
 					ld l, a
@@ -119,27 +123,26 @@ macro PRINTF
 
 				if strlen("\1") == 1 \
 				 &&(strcmp(strlwr("\1"), "a") == 0 \
-				 ||	strcmp(strlwr("\1"), "b") == 0 \
+				 || strcmp(strlwr("\1"), "b") == 0 \
 				 || strcmp(strlwr("\1"), "c") == 0 \
 				 || strcmp(strlwr("\1"), "d") == 0 \
 				 || strcmp(strlwr("\1"), "e") == 0 \
 				 || strcmp(strlwr("\1"), "h") == 0 \
 				 || strcmp(strlwr("\1"), "l") == 0)
+					if strcmp(strlwr("\1"), "a") != 0
+						ld a, \1
+					endc
 					ld hl, sp+4
-					ld [hl], \1
-					inc hl
+					ld [hli], a
 					xor a
 					ld [hl], a
-				elif strlen("\1") == 1  && strcmp(strlwr("\1"), "f") == 0
-					push de
-					push af
-					ld hl, sp+9
-					pop de
-
+				elif strlen("\1") == 1 && strcmp(strlwr("\1"), "f") == 0
+					ld hl, sp+2
+					ld a, [hl]
+					ld hl, sp+4
+					ld [hli], a
 					xor a
-					ld [hld], a
-					ld [hl], e
-					pop de
+					ld [hl], a
 				elif strlen("\1") == 2 && strcmp(strlwr("\1"), "sp") == 0
 					push de
 					ld hl, sp+6 + (_NARG * 2)
@@ -172,9 +175,8 @@ macro PRINTF
 					; bit 6
 					ld hl, sp+2
 					ld a, [hl]
-					rra ; bit 5
-					rra ; bit 4
-					swap a ; bit 1
+					rlca ; bit 7
+					rlca ; bit 0
 					and 1
 					ld hl, sp+4
 					ld [hli], a
@@ -185,7 +187,7 @@ macro PRINTF
 					ld hl, sp+2
 					ld a, [hl]
 					rra ; bit 4
-					swap a ; bit 1
+					swap a ; bit 0
 					and 1
 					ld hl, sp+4
 					ld [hli], a
@@ -195,7 +197,7 @@ macro PRINTF
 					; bit 4
 					ld a, 0
 					adc a
-					ld hl, sp+6
+					ld hl, sp+4
 					ld [hli], a
 					xor a
 					ld [hl], a
