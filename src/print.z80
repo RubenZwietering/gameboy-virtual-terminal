@@ -890,6 +890,12 @@ vprintf:
 
 	.conversion_i
 		push hl
+		
+		bit FORMATB_HAS_PRECISION_SPECIFIER, d
+		jr nz, .i_has_precision_specifier
+			ld e, 1
+		.i_has_precision_specifier
+		push de
 
 		ld a, [bc]
 		ld e, a
@@ -912,37 +918,31 @@ vprintf:
 
 		call _bcd
 
-		call print_hexl
+		ld hl, sp+2
+		ld a, [hl] ; precision
+		call print_hexadecimall
 
 		pop bc
+		pop de
 
 		pop hl
 		jp vprintf 
 	
+	; TODO
 	.conversion_o
 		jp vprintf
 	
+	; TODO
 	.conversion_x_lower
-		push hl
-
-		ld a, [bc]
-		ld e, a
-		inc bc
-		ld a, [bc]
-		ld d, a
-		inc bc
-
-		push bc
-
-		call print_hex
-
-		pop bc
-
-		pop hl
-		jp vprintf
-	
+		; fallthrough
 	.conversion_x_upper
 		push hl
+		
+		bit FORMATB_HAS_PRECISION_SPECIFIER, d
+		jr nz, .x_upper_has_precision_specifier
+			ld e, 1
+		.x_upper_has_precision_specifier
+		ld l, e
 
 		ld a, [bc]
 		ld e, a
@@ -953,7 +953,9 @@ vprintf:
 
 		push bc
 
-		call print_hex
+		ld a, l
+
+		call print_hexadecimal
 
 		pop bc
 
@@ -962,6 +964,12 @@ vprintf:
 		
 	.conversion_u
 		push hl
+		
+		bit FORMATB_HAS_PRECISION_SPECIFIER, d
+		jr nz, .u_has_precision_specifier
+			ld e, 1
+		.u_has_precision_specifier
+		push de
 
 		ld a, [bc]
 		ld e, a
@@ -974,9 +982,12 @@ vprintf:
 
 		call _bcd
 
-		call print_hexl
+		ld hl, sp+2
+		ld a, [hl] ; precision
+		call print_hexadecimall
 
 		pop bc
+		pop de
 
 		pop hl
 		jp vprintf
@@ -984,14 +995,11 @@ vprintf:
 	.conversion_b
 		push hl
 
-		; TODO: nice bit manipulation for this instead?
 		bit FORMATB_HAS_PRECISION_SPECIFIER, d
-		jr z, .no_precision_specifier
-			ld l, e
-			jr .has_precision_specifier
-		.no_precision_specifier
-			ld l, 1
-		.has_precision_specifier
+		jr nz, .b_has_precision_specifier
+			ld e, 1
+		.b_has_precision_specifier
+		ld l, e
 
 		ld a, [bc]
 		ld e, a
@@ -1022,17 +1030,9 @@ vprintf:
 		inc bc
 
 		push bc
-		push de
 
-		ld a, d
-
-		call print_byte
-
-		pop de
-
-		ld a, e
-		
-		call print_byte
+		ld a, 4
+		call print_hexadecimal
 
 		pop bc
 
