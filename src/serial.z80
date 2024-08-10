@@ -1,21 +1,23 @@
 include "hardware.inc"
 include "input.inc"
 
-section "serial interrupt", ROM0[INT_HANDLER_SERIAL] ; max 8 bytes
+section "serial interrupt", rom0[INT_HANDLER_SERIAL] ; max 8 bytes
+push af
+ldh a, [rSB]
 jp serial_interrupt_handler
 
-section "serial functions", ROMX
+section "serial functions", romx
 ; serial_interrupt_handler
 serial_interrupt_handler:
-	push af
-	
-	ld a, [rSB]
 	push hl
 	INPUT_BUFFER_PUSH
 	pop hl
 
+	xor a
+	ldh [rSB], a
+
 	ld a, SCF_START
-	ld [rSC], a
+	ldh [rSC], a
 
 	pop af
 	reti
