@@ -1,6 +1,66 @@
 if !def(KEYBOARD_INC)
 def KEYBOARD_INC equ 1
 
+def KEYBOARD_INPUT_BUFFER_SIZE equ 3 * 2 ; 3 scancodes
+
+; KEYBOARD_INPUT_BUFFER_PUSH
+; 
+; input:
+; - `a` : value
+; 
+; destroys: `f`, `hl`
+macro KEYBOARD_INPUT_BUFFER_PUSH
+	ld hl, keyboard_input_buffer_write_ptr
+	inc [hl]
+	jr nz, .not_end_write_ptr\@
+		ld [hl], low(keyboard_input_buffer)
+	.not_end_write_ptr\@
+	ld l, [hl]
+	ld h, high(keyboard_input_buffer)
+	ld [hl], a
+endm
+; KEYBOARD_INPUT_BUFFER_PUSH
+
+
+; KEYBOARD_INPUT_BUFFER_POP
+; 
+; returns:
+; - `a` : value
+;
+; destroys: `af`, `hl`
+macro KEYBOARD_INPUT_BUFFER_POP
+	ld hl, keyboard_input_buffer_read_ptr
+	inc [hl]
+	jr nz, .not_end_read_ptr\@
+		ld [hl], low(keyboard_input_buffer)
+	.not_end_read_ptr\@
+	ld l, [hl]
+	ld h, high(keyboard_input_buffer)
+	ld a, [hl]
+endm
+; KEYBOARD_INPUT_BUFFER_POP
+
+
+; KEYBOARD_INPUT_BUFFER_UNREAD
+;
+; returns:
+; - `a` : size
+;
+; flags:
+; - `z` : set if 0
+;
+; destroys: `af`, `b`
+macro KEYBOARD_INPUT_BUFFER_UNREAD
+	ld a, [keyboard_input_buffer_read_ptr]
+	ld b, a
+	ld a, [keyboard_input_buffer_write_ptr]
+	sub b
+	jr nc, .no_wrap\@
+		add KEYBOARD_INPUT_BUFFER_SIZE
+	.no_wrap\@
+endm
+; KEYBOARD_INPUT_BUFFER_UNREAD
+
 def KEYBOARD_STATEB_KEY_DOWN 	equ 0
 def KEYBOARD_STATEB_EXTENDED 	equ 1
 def KEYBOARD_STATEB_EXTENDED1 	equ 2

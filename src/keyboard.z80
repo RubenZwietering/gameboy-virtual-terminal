@@ -1,6 +1,10 @@
 include "keyboard.inc"
 include "input.inc"
 
+export keyboard_input_buffer_read_ptr
+export keyboard_input_buffer_write_ptr
+export keyboard_input_buffer
+
 export init_keyboard_mem
 
 export keyboard_get_packet
@@ -10,9 +14,22 @@ export keyboard_get_keycode
 section "keyboard variables", wramx
 keyboard_state: 			ds 1
 
+keyboard_input_buffer_read_ptr: 	ds 1
+keyboard_input_buffer_write_ptr: 	ds 1
+
+section "keyboard intput buffer", wramx, align[8, 256 - KEYBOARD_INPUT_BUFFER_SIZE]
+keyboard_input_buffer: 		ds KEYBOARD_INPUT_BUFFER_SIZE
+keyboard_input_buffer_end:
+assert fail, (high(keyboard_input_buffer) == high(keyboard_input_buffer_end - 1)), "keyboard_input_buffer crossed a 256 byte boundary"
+
 section "keyboard functions", romx
 ; init_keyboard_mem
 init_keyboard_mem:
+	xor a
+	ld a, low(keyboard_input_buffer)
+	ld [keyboard_input_buffer_read_ptr], a
+	ld [keyboard_input_buffer_write_ptr], a
+
 	ld a, KEYBOARD_STATEF_KEY_DOWN
 	ld [keyboard_state], a
 	ret
