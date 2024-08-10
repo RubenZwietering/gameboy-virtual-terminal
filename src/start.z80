@@ -92,6 +92,7 @@ soft_init:
 	call init_vblank_mem
 	call init_cursor_mem
 	call init_character_mem
+	call init_keyboard_mem
 
 	; end of ram population
 

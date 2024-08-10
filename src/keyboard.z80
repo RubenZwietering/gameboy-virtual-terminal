@@ -1,6 +1,8 @@
 include "keyboard.inc"
 include "input.inc"
 
+export init_keyboard_mem
+
 export keyboard_get_packet
 export keyboard_packet_to_scan_code
 export keyboard_get_keycode
@@ -9,12 +11,13 @@ section "keyboard variables", wramx
 keyboard_state: 			ds 1
 
 section "keyboard functions", romx
-; keyboard_init_mem
-keyboard_init_mem:
+; init_keyboard_mem
+init_keyboard_mem:
 	ld a, KEYBOARD_STATEF_KEY_DOWN
 	ld [keyboard_state], a
 	ret
-; keyboard_init_mem
+; init_keyboard_mem
+
 
 
 ; keyboard_get_packet
