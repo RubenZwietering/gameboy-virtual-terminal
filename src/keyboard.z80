@@ -9,6 +9,7 @@ export init_keyboard_mem
 
 export keyboard_get_packet
 export keyboard_packet_to_scan_code
+export keyboard_scan_code_to_keycode
 
 section "keyboard variables", wramx
 keyboard_input_buffer_read_ptr: 	ds 1
@@ -118,6 +119,166 @@ keyboard_packet_to_scan_code:
 	xor a
 	ret
 ; keyboard_packet_to_scan_code
+
+
+; keyboard_scan_code_to_keycode
+;
+; If the return keycode is 0 this function needs to be called again
+; with the new modifiers and keyboard state to get a scan code.
+;
+; input:
+; - `a` : scan code
+; - `d` : modifiers
+; - `e` : keyboard state
+;
+; returns:
+; - `a` : keycode
+; - `d` : modifiers
+; - `e` : keyboard state
+;
+; modifies `af`, `de`, `hl`
+keyboard_scan_code_to_keycode:
+	bit 7, a
+	jr nz, .high_bit
+
+	bit KEYBOARD_STATEB_EXTENDED, e
+	jr z, .not_extended0
+		set 7, a
+	.not_extended0
+
+	ld l, a
+	ld h, high(keyboard_scan_code_set_2_to_keycode_table)
+	ld a, [hl]
+
+	bit 7, a
+	jr nz, .key_modifier
+	ret
+
+	.high_bit
+		cp $f0
+		jr z, .key_up
+		cp $e0
+		jr z, .extended0
+		cp $83
+		jr z, .key_f7
+		cp $e1
+		jr z, .extended1
+		xor a
+		ret
+
+	.key_f7
+		ld a, KEY_F7
+		ret
+
+	.key_up
+		set KEYBOARD_STATEB_KEY_UP, e
+		xor a
+		ret
+
+	.extended0
+		set KEYBOARD_STATEB_EXTENDED, e
+		xor a
+		ret
+
+	.extended1
+		ld a, e
+		xor KEYBOARD_STATEF_EXTENDED1
+		ld e, a
+		xor a
+		ret
+
+	.key_modifier
+		set KEYBOARD_STATEB_MODIFIER, e
+		res KEYBOARD_STATEB_MODIFIER, a
+
+		cp KEY_LEFTALT
+		jr z, .key_alt
+		cp KEY_LEFTSHIFT
+		jr z, .key_shift
+		cp KEY_LEFTCTRL
+		jr z, .key_control
+		cp KEY_CAPSLOCK
+		jr z, .key_capslock
+		cp KEY_RIGHTSHIFT
+		jr z, .key_shift
+		cp KEY_NUMLOCK
+		jr z, .key_numlock
+		cp KEY_SCROLLLOCK
+		jr z, .key_scrolllock
+		cp KEY_RIGHTALT
+		jr z, .key_alt
+		cp KEY_RIGHTCTRL
+		jr z, .key_control
+		cp KEY_LEFTMETA
+		jr z, .key_meta
+		cp KEY_RIGHTMETA
+		jr z, .key_meta
+
+		ret
+
+	.key_alt
+		bit KEYBOARD_STATEB_KEY_UP, e
+		jr nz, .key_alt_up
+			set KEY_MODIFIERB_ALT, d
+			ret
+		.key_alt_up
+		res KEY_MODIFIERB_ALT, d
+		ret
+
+	.key_shift
+		bit KEYBOARD_STATEB_KEY_UP, e
+		jr nz, .key_shift_up
+			set KEY_MODIFIERB_SHIFT, d
+			ret
+		.key_shift_up
+		res KEY_MODIFIERB_SHIFT, d
+		ret
+
+	.key_control
+		bit KEYBOARD_STATEB_KEY_UP, e
+		jr nz, .key_control_up
+			set KEY_MODIFIERB_CONTROL, d
+			ret
+		.key_control_up
+		res KEY_MODIFIERB_CONTROL, d
+		ret
+
+	.key_capslock
+		bit KEYBOARD_STATEB_KEY_UP, e
+		jr nz, .key_capslock_up
+			set KEY_MODIFIERB_CAPSLOCK, d
+			ret
+		.key_capslock_up
+		res KEY_MODIFIERB_CAPSLOCK, d
+		ret
+
+	.key_numlock
+		bit KEYBOARD_STATEB_KEY_UP, e
+		jr nz, .key_numlock_up
+			set KEY_MODIFIERB_NUMLOCK, d
+			ret
+		.key_numlock_up
+		res KEY_MODIFIERB_NUMLOCK, d
+		ret
+
+	.key_scrolllock
+		bit KEYBOARD_STATEB_KEY_UP, e
+		jr nz, .key_scrolllock_up
+			set KEY_MODIFIERB_SCROLLLOCK, d
+			ret
+		.key_scrolllock_up
+		res KEY_MODIFIERB_SCROLLLOCK, d
+		ret
+
+	.key_meta
+		bit KEYBOARD_STATEB_KEY_UP, e
+		jr nz, .key_meta_up
+			set KEY_MODIFIERB_META, d
+			ret
+		.key_meta_up
+		res KEY_MODIFIERB_META, d
+		ret
+; keyboard_scan_code_to_keycode
 
 
 section "keycode to ascii translation tables", romx, align[8]
