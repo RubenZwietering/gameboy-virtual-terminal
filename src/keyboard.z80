@@ -35,6 +35,11 @@ init_keyboard_mem:
 ; init_keyboard_mem
 
 
+; keyboard_get_packet.pause
+	keyboard_get_packet.pause
+	halt
+	nop ; halt bug
+	; fallthrough
 
 ; keyboard_get_packet
 ;
@@ -42,17 +47,14 @@ init_keyboard_mem:
 ; - `de` : packet
 ;
 ; destroys `af`, `b`, `hl`
-	keyboard_get_packet.pause
-	halt
-	nop ; halt bug
 keyboard_get_packet:
-	INPUT_BUFFER_UNREAD
+	KEYBOARD_INPUT_BUFFER_UNREAD
 	cp 2
 	jr c, .pause
 
-	INPUT_BUFFER_POP
+	KEYBOARD_INPUT_BUFFER_POP
 	ld d, a
-	INPUT_BUFFER_POP
+	KEYBOARD_INPUT_BUFFER_POP
 	ld e, a
 	ret
 ; keyboard_get_packet
