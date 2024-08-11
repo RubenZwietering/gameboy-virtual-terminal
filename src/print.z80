@@ -143,7 +143,44 @@ _print_binary:
 ; destroys `af`, `bc`, `de`, `hl`
 print_binary:
 	cp 17
-	jr c, .no_extra_padding
+	jr nc, .extra_padding
+
+	.print_binary
+
+	ld l, d
+	ld d, a
+
+	or l
+	jr z, .no_print_high_byte 	; don't print if high byte and precision are zero
+
+	ld a, l
+	or a
+	jr z, .no_force_print_low_byte
+		ld d, 8 				; set low byte precision to 8 if high byte is non zero
+	.no_force_print_low_byte
+
+	ld a, d
+	push de
+	ld e, l
+	
+	sub 8 ; jump if a >= 8
+	jr nc, .bigger_than_7
+		xor a ; ld a, 0
+	.bigger_than_7
+
+	call print_binaryh
+	pop de
+	.no_print_high_byte
+
+	ld a, d
+	cp 9 ; jump if a <= 8
+	jr c, .smaller_than_9
+		ld a, 8
+	.smaller_than_9
+
+	jp print_binaryh
+
+	.extra_padding
 		push de
 		sub 16
 		ld l, a
@@ -159,28 +196,7 @@ print_binary:
 
 		ld a, 16
 		pop de
-	.no_extra_padding
-
-	ld l, d
-	ld d, a
-	push de
-	ld e, l
-	
-	sub 8 ; jump if a > 8
-	jr nc, .bigger_than_8
-		xor a ; ld a, 0
-	.bigger_than_8
-
-	call print_binaryh
-	pop de
-
-	ld a, d
-	cp 9 ; jump if a <= 8
-	jr c, .smaller_than_9
-		ld a, 8
-	.smaller_than_9
-
-	jp print_binaryh
+		jr .print_binary
 ; print_binary
 ; _print_binary
 
@@ -220,34 +236,37 @@ print_hexadecimalh:
 	ld d, a
 
 	.print_hex
-		ld a, e
-		and $f0
-		jr nz, .high_nibble_not_zero
-			ld a, d
-			cp 2
-			jr c, .no_high_nibble
-			xor a
-		.high_nibble_not_zero
-		swap a
-		ld l, a
-		ld h, high(hex_map)
-		ld a, [hl]
 
-		push de
-		call putchar
-		pop de
+	ld a, e
+	and $f0
+	jr nz, .high_nibble_not_zero
+		ld a, d
+		cp 2
+		jr c, .no_high_nibble
+		xor a
+	.high_nibble_not_zero
 
-		.no_high_nibble
-		ld a, e
-		and $0f
-		jr nz, .low_nibble_not_zero
-			cp d
-			ret z
-		.low_nibble_not_zero
-		ld l, a
-		ld h, high(hex_map)
-		ld a, [hl]
-		jp putchar
+	swap a
+	ld l, a
+	ld h, high(hex_map)
+	ld a, [hl]
+	
+	inc d 				; set low byte precision to a non zero value if high byte is printed
+	push de
+	call putchar
+	pop de
+	.no_high_nibble
+
+	ld a, e
+	and $0f
+	jr nz, .low_nibble_not_zero
+		cp d
+		ret z
+	.low_nibble_not_zero
+	ld l, a
+	ld h, high(hex_map)
+	ld a, [hl]
+	jp putchar
 
 	.extra_padding
 		push de
@@ -308,16 +327,28 @@ print_hexadecimal:
 
 	ld l, d
 	ld d, a
+
+	or l
+	jr z, .no_print_high_byte 	; don't print if high byte and precision are zero
+
+	ld a, l
+	or a
+	jr z, .no_force_print_low_byte
+		ld d, 2 				; set low byte precision to 2 if high byte is non zero
+	.no_force_print_low_byte
+
+	ld a, d
 	push de
 	ld e, l
 	
-	sub 2 ; jump if a > 2
-	jr nc, .bigger_than_2
+	sub 2 ; jump if a >= 2
+	jr nc, .bigger_than_1
 		xor a ; ld a, 0
-	.bigger_than_2
+	.bigger_than_1
 
 	call print_hexadecimalh
 	pop de
+	.no_print_high_byte
 
 	ld a, d
 	cp 3 ; jump if a <= 2
@@ -383,13 +414,19 @@ print_hexadecimall:
 
 	.print_hex
 
+	ld hl, $ffff
+	add hl, de
+	jr nc, .no_force_print_low_bytes
+		ld a, 4 				; set low bytes precision to 4 if high bytes are non zero
+	.no_force_print_low_bytes
+
 	push af
 	push bc
 	
-	sub 4 ; jump if a > 4
-	jr nc, .bigger_than_4
+	sub 4 ; jump if a >= 4
+	jr nc, .bigger_than_3
 		xor a ; ld a, 0
-	.bigger_than_4
+	.bigger_than_3
 
 	call print_hexadecimal
 	pop de
