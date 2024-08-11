@@ -9,7 +9,6 @@ export init_keyboard_mem
 
 export keyboard_get_packet
 export keyboard_packet_to_scan_code
-export keyboard_get_keycode
 
 section "keyboard variables", wramx
 keyboard_state: 			ds 1
@@ -122,64 +121,6 @@ keyboard_packet_to_scan_code:
 	xor a
 	ret
 ; keyboard_packet_to_scan_code
-
-
-; keyboard_get_keycode
-;
-; returns:
-; - `a` : keycode, 0 means unknown or invalid
-;
-; destoys `af`, `bc`, `de`, `hl`
-keyboard_get_keycode:
-	call keyboard_get_packet
-	call keyboard_packet_to_scan_code
-	or a
-	ret z
-	cp $80
-	jr nc, .extended
-
-	ld l, a
-	ld h, high(keyboard_scan_code_extended_set_2_to_keycode_table)
-	ld a, [hl]
-	or a
-	ret z
-	ld hl, keyboard_state
-	set KEYBOARD_STATEB_KEY_DOWN, [hl]
-	ret
-
-	.extended
-	cp $f0
-	jr z, .f0
-	cp $e0
-	jr z, .e0
-	cp $83
-	jr z, .key_f7
-	cp $e1
-	jr z, .e1
-	xor a
-	ret
-
-	.key_f7
-	ld a, KEY_F7
-	ld hl, keyboard_state
-	set KEYBOARD_STATEB_KEY_DOWN, [hl]
-	ret
-
-	.f0
-	ld hl, keyboard_state
-	res KEYBOARD_STATEB_KEY_DOWN, [hl]
-	jr keyboard_get_keycode
-
-	.e0
-	ld hl, keyboard_state
-	set KEYBOARD_STATEB_EXTENDED, [hl]
-	jr keyboard_get_keycode
-
-	.e1
-	ld hl, keyboard_state
-	set KEYBOARD_STATEB_EXTENDED1, [hl]
-	jr keyboard_get_keycode
-; keyboard_get_keycode
 
 
 section "keycode to ascii translation tables", romx, align[8]
