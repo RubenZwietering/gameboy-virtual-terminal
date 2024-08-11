@@ -10,7 +10,7 @@ section "serial functions", romx
 ; serial_interrupt_handler
 serial_interrupt_handler:
 	push hl
-	INPUT_BUFFER_PUSH
+	INPUT_BUFFER_PUSH a
 	pop hl
 
 	xor a

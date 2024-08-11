@@ -300,7 +300,7 @@ getchar:
 	INPUT_BUFFER_UNREAD
 	jr z, .pause
 
-	INPUT_BUFFER_POP
+	INPUT_BUFFER_POP a
 	ret
 ; getchar
 
