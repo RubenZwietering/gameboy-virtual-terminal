@@ -11,6 +11,7 @@ export init_keyboard_mem
 export keyboard_get_packet
 export keyboard_packet_to_scan_code
 export keyboard_scan_code_to_keycode
+export keyboard_keycode_to_input_buffer_chars
 
 section "keyboard variables", wramx
 keyboard_input_buffer_read_ptr: 	ds 1
@@ -332,6 +333,335 @@ keyboard_scan_code_to_keycode:
 ; keyboard_scan_code_to_keycode
 
 
+; keyboard_keycode_to_input_buffer_chars
+;
+; Converts a keycode into characters and writes the result to the input buffer.
+;
+; input:
+; - `a` : keycode
+; - `e` : modifiers
+;
+; modifies `af`, `d`, `hl`
+keyboard_keycode_to_input_buffer_chars:
+	bit 7, a
+	ret nz
+
+	ld d, a
+
+	bit KEY_MODIFIERB_SHIFT, e
+	jr z, .no_shift
+		set 7, a
+	.no_shift
+	
+	ld l, a
+	ld h, high(keycode_base_case_to_ascii_table)
+	ld a, [hl]
+
+	inc a
+	ret z 	; not a printable keycode
+	dec a
+	jr z, .keycode_sequence
+
+	bit KEY_MODIFIERB_CONTROL, e
+	jr z, .no_control
+		; TODO : keys `, 2 to 8, -, ? and spacebar don't work quite as intended yet
+		cp $7f
+		jr nz, .not_backspace
+			ld a, $08 ; "\b"
+			jr .no_control
+		.not_backspace
+
+		sub "@"
+		ret c
+
+		cp " "
+		jr c, .no_control
+		sub "a" - "A"
+		ret c
+	.no_control
+	
+	bit KEY_MODIFIERB_CAPSLOCK, e
+	jr z, .no_capslock
+		cp "A"
+		jr c, .no_capslock
+		cp "Z" + 1
+		jr nc, .not_upper
+			add "a" - "A"
+			jr .no_capslock
+		.not_upper
+
+		cp "a"
+		jr c, .no_capslock
+		cp "z" + 1
+		jr nc, .not_lower
+			sub "a" - "A"
+		.not_lower
+	.no_capslock
+	
+	; TODO
+	; bit KEY_MODIFIERB_META, e
+	; jr z, .no_meta
+	; .no_meta
+
+	; TODO
+	; bit KEY_MODIFIERB_SCROLLLOCK, e
+	; jr z, .no_scrolllock
+	; .no_scrolllock
+
+	bit KEY_MODIFIERB_ALT, e
+	jr z, .no_alt
+		INPUT_BUFFER_PUSH $1b ; "\e"
+	.no_alt
+
+	INPUT_BUFFER_PUSH a
+	ret
+
+	.keycode_sequence
+		ld a, d
+
+		cp KEY_TAB
+		jp z, .keycode_sequence_tab
+		cp KEY_F1
+		jp z, .keycode_sequence_f1
+		cp KEY_F2
+		jp z, .keycode_sequence_f2
+		cp KEY_F3
+		jp z, .keycode_sequence_f3
+		cp KEY_F4
+		jp z, .keycode_sequence_f4
+		cp KEY_F5
+		jp z, .keycode_sequence_f5
+		cp KEY_F6
+		jp z, .keycode_sequence_f6
+		cp KEY_F7
+		jp z, .keycode_sequence_f7
+		cp KEY_F8
+		jp z, .keycode_sequence_f8
+		cp KEY_F9
+		jp z, .keycode_sequence_f9
+		cp KEY_F10
+		jp z, .keycode_sequence_f10
+		cp KEY_KP7
+		jp z, .keycode_sequence_kp7
+		cp KEY_KP8
+		jp z, .keycode_sequence_kp8
+		cp KEY_KP9
+		jp z, .keycode_sequence_kp9
+		cp KEY_KP4
+		jp z, .keycode_sequence_kp4
+		cp KEY_KP5
+		jp z, .keycode_sequence_kp5
+		cp KEY_KP6
+		jp z, .keycode_sequence_kp6
+		cp KEY_KP1
+		jp z, .keycode_sequence_kp1
+		cp KEY_KP2
+		jp z, .keycode_sequence_kp2
+		cp KEY_KP3
+		jp z, .keycode_sequence_kp3
+		cp KEY_KP0
+		jp z, .keycode_sequence_kp0
+		cp KEY_KPDOT
+		jp z, .keycode_sequence_kpdot
+		cp KEY_F11
+		jp z, .keycode_sequence_f11
+		cp KEY_F12
+		jp z, .keycode_sequence_f12
+		cp KEY_HOME
+		jp z, .keycode_sequence_home
+		cp KEY_UP
+		jp z, .keycode_sequence_up
+		cp KEY_PAGEUP
+		jp z, .keycode_sequence_pageup
+		cp KEY_LEFT
+		jp z, .keycode_sequence_left
+		cp KEY_RIGHT
+		jp z, .keycode_sequence_right
+		cp KEY_END
+		jp z, .keycode_sequence_end
+		cp KEY_DOWN
+		jp z, .keycode_sequence_down
+		cp KEY_PAGEDOWN
+		jp z, .keycode_sequence_pagedown
+		cp KEY_INSERT
+		jp z, .keycode_sequence_insert
+		cp KEY_DELETE
+		jp z, .keycode_sequence_delete
+
+		DPUTS "keyboard_keycode_to_input_buffer_chars.keycode_sequence unhandled keycode: %A%"
+		ret
+
+	macro KEYCODE_SEQUENCE_SHORT
+		ld d, \1
+		jp .keycode_sequence_short
+	endm
+
+	macro KEYCODE_SEQUENCE_LONG
+		if high(\1) == 0
+			xor a
+			ld d, \1
+		else
+			ld a, high(\1)
+			ld d, low(\1)
+		endc
+		jp .keycode_sequence_long
+	endm
+
+	macro KEYCODE_SEQUENCE_KP
+		bit KEY_MODIFIERB_NUMLOCK, e
+		jr z, .no_numlock\@
+			\2 \3
+		.no_numlock\@
+		INPUT_BUFFER_PUSH \1
+		ret
+	endm
+
+	.keycode_sequence_tab
+		INPUT_BUFFER_PUSH $1b ; "\e"
+		INPUT_BUFFER_PUSH "\t"
+		ret
+		
+	.keycode_sequence_f1
+		KEYCODE_SEQUENCE_LONG "11"
+
+	.keycode_sequence_f2
+		KEYCODE_SEQUENCE_LONG "12"
+
+	.keycode_sequence_f3
+		KEYCODE_SEQUENCE_LONG "13"
+
+	.keycode_sequence_f4
+		KEYCODE_SEQUENCE_LONG "14"
+
+	.keycode_sequence_f5
+		KEYCODE_SEQUENCE_LONG "15"
+
+	.keycode_sequence_f6
+		KEYCODE_SEQUENCE_LONG "17"
+
+	.keycode_sequence_f7
+		KEYCODE_SEQUENCE_LONG "18"
+
+	.keycode_sequence_f8
+		KEYCODE_SEQUENCE_LONG "19"
+
+	.keycode_sequence_f9
+		KEYCODE_SEQUENCE_LONG "20"
+
+	.keycode_sequence_f10
+		KEYCODE_SEQUENCE_LONG "21"
+
+	.keycode_sequence_kp7
+		KEYCODE_SEQUENCE_KP "7", KEYCODE_SEQUENCE_LONG, "7"
+		
+	.keycode_sequence_kp8
+		KEYCODE_SEQUENCE_KP "8", KEYCODE_SEQUENCE_SHORT, "A"
+
+	.keycode_sequence_kp9
+		KEYCODE_SEQUENCE_KP "9", KEYCODE_SEQUENCE_LONG, "5"
+
+	.keycode_sequence_kp4
+		KEYCODE_SEQUENCE_KP "4", KEYCODE_SEQUENCE_SHORT, "D"
+
+	.keycode_sequence_kp5
+		KEYCODE_SEQUENCE_KP "5", KEYCODE_SEQUENCE_SHORT, "G"
+
+	.keycode_sequence_kp6
+		KEYCODE_SEQUENCE_KP "6", KEYCODE_SEQUENCE_SHORT, "C"
+
+	.keycode_sequence_kp1
+		KEYCODE_SEQUENCE_KP "1", KEYCODE_SEQUENCE_LONG, "8"
+
+	.keycode_sequence_kp2
+		KEYCODE_SEQUENCE_KP "2", KEYCODE_SEQUENCE_SHORT, "B"
+
+	.keycode_sequence_kp3
+		KEYCODE_SEQUENCE_KP "3", KEYCODE_SEQUENCE_LONG, "6"
+
+	.keycode_sequence_kp0
+		KEYCODE_SEQUENCE_KP "0", KEYCODE_SEQUENCE_LONG, "2"
+
+	.keycode_sequence_kpdot
+		KEYCODE_SEQUENCE_KP ".", KEYCODE_SEQUENCE_LONG, "3"
+
+	.keycode_sequence_f11
+		KEYCODE_SEQUENCE_LONG "23"
+
+	.keycode_sequence_f12
+		KEYCODE_SEQUENCE_LONG "24"
+
+	.keycode_sequence_home
+		KEYCODE_SEQUENCE_LONG "1"
+	
+	.keycode_sequence_up
+		KEYCODE_SEQUENCE_SHORT "A"
+	
+	.keycode_sequence_pageup
+		KEYCODE_SEQUENCE_LONG "5"
+	
+	.keycode_sequence_left
+		KEYCODE_SEQUENCE_SHORT "D"
+	
+	.keycode_sequence_right
+		KEYCODE_SEQUENCE_SHORT "C"
+	
+	.keycode_sequence_end
+		KEYCODE_SEQUENCE_LONG "4"
+	
+	.keycode_sequence_down
+		KEYCODE_SEQUENCE_SHORT "B"
+	
+	.keycode_sequence_pagedown
+		KEYCODE_SEQUENCE_LONG "6"
+	
+	.keycode_sequence_insert
+		KEYCODE_SEQUENCE_LONG "2"
+	
+	.keycode_sequence_delete
+		KEYCODE_SEQUENCE_LONG "3"
+
+	.keycode_sequence_short
+		INPUT_BUFFER_PUSH $1b ; "\e"
+		INPUT_BUFFER_PUSH "["
+		ld a, e
+		and KEY_MODIFIERF_SHIFT | KEY_MODIFIERF_ALT | KEY_MODIFIERF_CONTROL | KEY_MODIFIERF_META
+		jr z, .keycode_sequence_short_no_modifiers
+			cp 10
+			jr c, .keycode_sequence_short_modifiers_no_high_digit
+				sub 10
+				INPUT_BUFFER_PUSH "1"
+			.keycode_sequence_short_modifiers_no_high_digit
+			add "1"
+			INPUT_BUFFER_PUSH a
+		.keycode_sequence_short_no_modifiers
+		INPUT_BUFFER_PUSH d
+		ret
+
+	.keycode_sequence_long
+		INPUT_BUFFER_PUSH $1b ; "\e"
+		INPUT_BUFFER_PUSH "["
+		or a
+		jr z, .keycode_sequence_long_empty_a
+			INPUT_BUFFER_PUSH a
+		.keycode_sequence_long_empty_a
+		INPUT_BUFFER_PUSH d
+		ld a, e
+		and KEY_MODIFIERF_SHIFT | KEY_MODIFIERF_ALT | KEY_MODIFIERF_CONTROL | KEY_MODIFIERF_META
+		jr z, .keycode_sequence_long_no_modifiers
+			INPUT_BUFFER_PUSH ";"
+			cp 10
+			jr c, .keycode_sequence_long_modifiers_no_high_digit
+				sub 10
+				INPUT_BUFFER_PUSH "1"
+			.keycode_sequence_long_modifiers_no_high_digit
+			add "1"
+			INPUT_BUFFER_PUSH a
+		.keycode_sequence_long_no_modifiers
+		INPUT_BUFFER_PUSH "~"
+		ret
+; keyboard_keycode_to_input_buffer_chars
+
+
 section "keycode to ascii translation tables", romx, align[8]
 keycode_base_case_to_ascii_table:
 /* KEY_RESERVED          */ db  -1
@@ -546,7 +876,7 @@ keycode_upper_case_to_ascii_table:
 /* KEY_KP6               */ db   0  ; "\e[C"
 /* KEY_KPPLUS            */ db  "+"
 /* KEY_KP1               */ db   0  ; "\e[8~"
-/* KEY_KP2               */ db   0  ; "\e[C"
+/* KEY_KP2               */ db   0  ; "\e[B"
 /* KEY_KP3               */ db   0  ; "\e[6~"
 /* KEY_KP0               */ db   0  ; "\e[2~"
 /* KEY_KPDOT             */ db   0  ; "\e[3~"
