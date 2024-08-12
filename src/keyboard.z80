@@ -1,5 +1,6 @@
 include "keyboard.inc"
 include "input.inc"
+include "debug.inc"
 
 export keyboard_input_buffer_read_ptr
 export keyboard_input_buffer_write_ptr
@@ -19,6 +20,16 @@ section "keyboard intput buffer", wramx, align[8, 256 - KEYBOARD_INPUT_BUFFER_SI
 keyboard_input_buffer: 		ds KEYBOARD_INPUT_BUFFER_SIZE
 keyboard_input_buffer_end:
 assert fail, (high(keyboard_input_buffer) == high(keyboard_input_buffer_end - 1)), "keyboard_input_buffer crossed a 256 byte boundary"
+
+section "nibble bit count lookup table", romx, align[8]
+nibble_bit_count_lookup_table:
+	db 	0, 1, 1, 2, 1, 2, 2, 3, \
+		1, 2, 2, 3, 2, 3, 3, 4
+
+section "nibble reverse bits lookup table", romx, align[8]
+nibble_reverse_bits_lookup_table:
+	db 	$0, $8, $4, $c, $2, $a, $6, $e, \
+		$1, $9, $5, $d, $3, $b, $7, $f
 
 section "keyboard functions", romx
 ; init_keyboard_mem
@@ -64,53 +75,75 @@ keyboard_get_packet:
 ; 	start bit = always 0,
 ; 	d = data bit,
 ; 	5 times 0 bit for padding of 11 bit packet,
-; 	p = parity bit,
+; 	p = odd parity bit,
 ; 	stop bit = always 1
 ;
 ; returns:
 ; - `a` : scan code, 0 means broken packet
 ;
-; destroys `f`, `bc`, `de`
+; modifies `af`, `c`, `de`
 keyboard_packet_to_scan_code:
-	xor a 		; bit count
-	ld c, a 	; 0
-	ld b, a 	; scan code
-	
-	swap e 		; %0dp10000
-	sla e 		; %dp100000, c=0
-	DPUTSCJP c, "keyboard: padding bit 4 was not zero"
-	jr c, .broken_packet
-	
-	sla d 		; %ddddddd0, c=0
+	;      s0123456
+	; d = %0ddddddd
+	;           7 s
+	; e = %00000dp1
+
+				;        7
+	sra e 		; %000000dp, c=s1
+	DPUTSCJP nc, "keyboard: stop bit was not one"
+	jr nc, .broken_packet
+
+				;         7
+	sra e 		; %0000000d, c=p
+	rr e 		; %p0000000, c=d7
+
+				;  01234567
+	rl d 		; %dddddddd, c=s0
 	DPUTSCJP c, "keyboard: start bit was not zero"
 	jr c, .broken_packet
 
-	sla d 		; %dddddd00, c=d0
-	rr b 		; %d0000000
-	sla d 		; %ddddd000, c=d1
-	rr b 		; %dd000000
-	sla d 		; %dddd0000, c=d2
-	rr b 		; %ddd00000
-	sla d 		; %ddd00000, c=d3
-	rr b 		; %dddd0000
-	sla d 		; %dd000000, c=d4
-	rr b 		; %ddddd000
-	sla d 		; %d0000000, c=d5
-	rr b 		; %dddddd00
-	sla d 		; %00000000, c=d6
-	rr b 		; %ddddddd0
-	sla e 		; %p1000000, c=d7
-	rr b 		; %dddddddd
-
-	sla e 		; %10000000, c=p
-	; check parity
-	sla e 		; %00000000, c=1
-	DPUTSCJP nc, "keyboard: stop bit was not one"
-	jr nc, .broken_packet
-	DPUTSCJP nz, "keyboard: padding bit 0-3 was not zero"
+	sla e 		; %00000000, c=p
+	DPUTSCJP nz, "keyboard: padding was non zero"
 	jr nz, .broken_packet
 
-	ld a, b
+	ccf 		; flip parity bit
+	rl e 		; %0000000p, c=0
+
+	; parity check
+	ld h, high(nibble_bit_count_lookup_table)
+	ld a, d	
+	and $0f
+	ld l, a
+	ld c, [hl] 	; low nibble bit count
+
+	ld a, d
+	swap a
+	and $0f
+	ld l, a
+	ld a, [hl] 	; high nibble bit count
+	add c 		; bit count
+	and 1 		; bit 0 should be the same as parity bit,
+	cp e 		;   because of odd parity and it was flipped earlier
+	DPUTSCJP nz, "keyboard: parity bit was wrong"
+	jr nz, .broken_packet
+	; parity check
+
+	;  01234567
+	; %dddddddd
+	ld h, high(nibble_reverse_bits_lookup_table)
+	ld a, d
+	and $0f 	; low nibble
+	ld l, a
+	ld a, d
+	ld d, [hl] 	; reverse low nibble
+	swap d 		; low -> high nibble
+	swap a 		; high -> low nibble
+	and $0f 	; low nibble
+	ld l, a
+	ld a, [hl] 	; reverse low nibble
+	or d
+	;  76543210
+	; %dddddddd
 	ret
 
 	.broken_packet
