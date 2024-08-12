@@ -42,16 +42,14 @@ init_keyboard_mem:
 ; returns:
 ; - `de` : packet
 ;
-; destroys `af`, `b`, `hl`
+; destroys `af`, `hl`
 keyboard_get_packet:
-	KEYBOARD_INPUT_BUFFER_UNREAD
+	KEYBOARD_INPUT_BUFFER_UNREAD d
 	cp 2
 	jr c, .pause
 
-	KEYBOARD_INPUT_BUFFER_POP
-	ld d, a
-	KEYBOARD_INPUT_BUFFER_POP
-	ld e, a
+	KEYBOARD_INPUT_BUFFER_POP d
+	KEYBOARD_INPUT_BUFFER_POP e
 	ret
 ; keyboard_get_packet
 

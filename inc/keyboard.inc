@@ -5,11 +5,14 @@ def KEYBOARD_INPUT_BUFFER_SIZE equ 3 * 2 ; 3 scancodes
 
 ; KEYBOARD_INPUT_BUFFER_PUSH
 ; 
-; input:
-; - `a` : value
+; arguments:
+; - 1 : 8 bit register or value to push
 ; 
 ; destroys: `f`, `hl`
 macro KEYBOARD_INPUT_BUFFER_PUSH
+	static_assert fatal, !(_NARG < 1), "Too few arguments to KEYBOARD_INPUT_BUFFER_PUSH"
+	static_assert fatal, !(_NARG > 1), "Too many arguments to KEYBOARD_INPUT_BUFFER_PUSH"
+
 	ld hl, keyboard_input_buffer_write_ptr
 	inc [hl]
 	jr nz, .not_end_write_ptr\@
@@ -17,18 +20,21 @@ macro KEYBOARD_INPUT_BUFFER_PUSH
 	.not_end_write_ptr\@
 	ld l, [hl]
 	ld h, high(keyboard_input_buffer)
-	ld [hl], a
+	ld [hl], \1
 endm
 ; KEYBOARD_INPUT_BUFFER_PUSH
 
 
 ; KEYBOARD_INPUT_BUFFER_POP
 ; 
-; returns:
-; - `a` : value
+; arguments:
+; - 1 : 8 bit register to put the popped value in
 ;
 ; destroys: `af`, `hl`
 macro KEYBOARD_INPUT_BUFFER_POP
+	static_assert fatal, !(_NARG < 1), "Too few arguments to KEYBOARD_INPUT_BUFFER_POP"
+	static_assert fatal, !(_NARG > 1), "Too many arguments to KEYBOARD_INPUT_BUFFER_POP"
+
 	ld hl, keyboard_input_buffer_read_ptr
 	inc [hl]
 	jr nz, .not_end_read_ptr\@
@@ -36,12 +42,15 @@ macro KEYBOARD_INPUT_BUFFER_POP
 	.not_end_read_ptr\@
 	ld l, [hl]
 	ld h, high(keyboard_input_buffer)
-	ld a, [hl]
+	ld \1, [hl]
 endm
 ; KEYBOARD_INPUT_BUFFER_POP
 
 
 ; KEYBOARD_INPUT_BUFFER_UNREAD
+;
+; arguments:
+; - 1 : optional register to use for arithmetic, `b` will be used if no argument is passed
 ;
 ; returns:
 ; - `a` : size
@@ -49,15 +58,26 @@ endm
 ; flags:
 ; - `z` : set if 0
 ;
-; destroys: `af`, `b`
+; destroys: `af`, argument 1
 macro KEYBOARD_INPUT_BUFFER_UNREAD
+	static_assert fatal, !(_NARG < 1), "Too few arguments to KEYBOARD_INPUT_BUFFER_UNREAD"
+	static_assert fatal, !(_NARG > 1), "Too many arguments to KEYBOARD_INPUT_BUFFER_UNREAD"
+
+	if _NARG == 1
+		def _TEMP_R\@ equs "\1"
+	else
+		def _TEMP_R\@ equs "b"
+	endc
+
 	ld a, [keyboard_input_buffer_read_ptr]
-	ld b, a
+	ld _TEMP_R\@, a
 	ld a, [keyboard_input_buffer_write_ptr]
-	sub b
+	sub _TEMP_R\@
 	jr nc, .no_wrap\@
 		add KEYBOARD_INPUT_BUFFER_SIZE
 	.no_wrap\@
+
+	purge _TEMP_R\@
 endm
 ; KEYBOARD_INPUT_BUFFER_UNREAD
 
