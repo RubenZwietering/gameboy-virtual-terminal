@@ -159,15 +159,17 @@ keyboard_packet_to_scan_code:
 ;
 ; input:
 ; - `a` : scan code
+; - `b` : locking modifiers
 ; - `d` : modifiers
 ; - `e` : keyboard state
 ;
 ; returns:
 ; - `a` : keycode
+; - `b` : locking modifiers
 ; - `d` : modifiers
 ; - `e` : keyboard state
 ;
-; modifies `af`, `de`, `hl`
+; modifies `af`, `b`, `de`, `hl`
 keyboard_scan_code_to_keycode:
 	bit 7, a
 	jr nz, .high_bit
@@ -280,6 +282,12 @@ keyboard_scan_code_to_keycode:
 			set KEY_MODIFIERB_CAPSLOCK, d
 			ret
 		.key_capslock_up
+		bit KEY_MODIFIERB_CAPSLOCK, b
+		jr nz, .key_capslock_res
+			set KEY_MODIFIERB_CAPSLOCK, b
+			ret
+		.key_capslock_res
+		res KEY_MODIFIERB_CAPSLOCK, b
 		res KEY_MODIFIERB_CAPSLOCK, d
 		ret
 
@@ -289,6 +297,12 @@ keyboard_scan_code_to_keycode:
 			set KEY_MODIFIERB_NUMLOCK, d
 			ret
 		.key_numlock_up
+		bit KEY_MODIFIERB_NUMLOCK, b
+		jr nz, .key_numlock_res
+			set KEY_MODIFIERB_NUMLOCK, b
+			ret
+		.key_numlock_res
+		res KEY_MODIFIERB_NUMLOCK, b
 		res KEY_MODIFIERB_NUMLOCK, d
 		ret
 
@@ -298,6 +312,12 @@ keyboard_scan_code_to_keycode:
 			set KEY_MODIFIERB_SCROLLLOCK, d
 			ret
 		.key_scrolllock_up
+		bit KEY_MODIFIERB_SCROLLLOCK, b
+		jr nz, .key_scrolllock_res
+			set KEY_MODIFIERB_SCROLLLOCK, b
+			ret
+		.key_scrolllock_res
+		res KEY_MODIFIERB_SCROLLLOCK, b
 		res KEY_MODIFIERB_SCROLLLOCK, d
 		ret
 
