@@ -1,5 +1,6 @@
 include "hardware.inc"
 include "input.inc"
+include "keyboard.inc"
 
 section "serial interrupt", rom0[INT_HANDLER_SERIAL] ; max 8 bytes
 push af
@@ -9,8 +10,42 @@ jp serial_interrupt_handler
 section "serial functions", romx
 ; serial_interrupt_handler
 serial_interrupt_handler:
+	push af
+	ld a, [input_method]
+	or a
+	jr nz, .input_method_keyboard
+		pop af
+		push hl
+		INPUT_BUFFER_PUSH a
+		pop hl
+
+		xor a
+		ldh [rSB], a
+
+		ld a, SCF_START
+		ldh [rSC], a
+
+		pop af
+		reti
+	.input_method_keyboard
+
+	pop af
 	push hl
-	INPUT_BUFFER_PUSH a
+	KEYBOARD_INPUT_BUFFER_PUSH a
+
+	xor a
+	ldh [rSB], a
+
+	ld a, SCF_START
+	ldh [rSC], a
+
+	ld a, 128 ; TODO : more precise timing
+	.loop
+		dec a
+		jr nz, .loop
+
+	ldh a, [rSB]
+	KEYBOARD_INPUT_BUFFER_PUSH a
 	pop hl
 
 	xor a
