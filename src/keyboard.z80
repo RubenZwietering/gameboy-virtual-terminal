@@ -2,6 +2,10 @@ include "keyboard.inc"
 include "input.inc"
 include "debug.inc"
 
+export processing_keyboard_input
+export keyboard_scan_code_state
+export keyboard_modifiers
+export keyboard_locking_modifiers
 export keyboard_input_buffer_read_ptr
 export keyboard_input_buffer_write_ptr
 export keyboard_input_buffer
@@ -14,6 +18,10 @@ export keyboard_scan_code_to_keycode
 export keyboard_keycode_to_input_buffer_chars
 
 section "keyboard variables", wramx
+processing_keyboard_input: 			ds 1
+keyboard_scan_code_state: 			ds 1
+keyboard_modifiers: 				ds 1
+keyboard_locking_modifiers: 		ds 1
 keyboard_input_buffer_read_ptr: 	ds 1
 keyboard_input_buffer_write_ptr: 	ds 1
 
@@ -36,6 +44,11 @@ section "keyboard functions", romx
 ; init_keyboard_mem
 init_keyboard_mem:
 	xor a
+	ld [processing_keyboard_input], a
+	ld [keyboard_scan_code_state], a
+	ld [keyboard_modifiers], a
+	ld [keyboard_locking_modifiers], a
+
 	ld a, low(keyboard_input_buffer)
 	ld [keyboard_input_buffer_read_ptr], a
 	ld [keyboard_input_buffer_write_ptr], a

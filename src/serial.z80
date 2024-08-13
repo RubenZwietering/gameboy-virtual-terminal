@@ -46,7 +46,6 @@ serial_interrupt_handler:
 
 	ldh a, [rSB]
 	KEYBOARD_INPUT_BUFFER_PUSH a
-	pop hl
 
 	xor a
 	ldh [rSB], a
@@ -54,6 +53,73 @@ serial_interrupt_handler:
 	ld a, SCF_START
 	ldh [rSC], a
 
+	ld a, [processing_keyboard_input]
+	or a
+	jr z, .not_processing_keyboard_input
+
+	pop hl
 	pop af
 	reti
+
+	.not_processing_keyboard_input
+
+	ld a, 1
+	ld [processing_keyboard_input], a
+
+	ei
+	push bc
+	push de
+
+	.read_keyboard_input_buffer_loop
+		KEYBOARD_INPUT_BUFFER_POP d
+		KEYBOARD_INPUT_BUFFER_POP e
+		
+		call keyboard_packet_to_scan_code
+		or a
+		jr z, .read_keyboard_input_buffer_continue
+
+		ld hl, keyboard_scan_code_state
+		ld e, [hl]
+		ld hl, keyboard_modifiers
+		ld d, [hl]
+		ld hl, keyboard_locking_modifiers
+		ld b, [hl]
+
+		call keyboard_scan_code_to_keycode
+
+		ld hl, keyboard_scan_code_state
+		ld [hl], e
+		ld hl, keyboard_modifiers
+		ld [hl], d
+		ld hl, keyboard_locking_modifiers
+		ld [hl], b
+
+		or a
+		jr z, .read_keyboard_input_buffer_continue
+
+		bit KEYBOARD_STATEB_KEY_UP, e
+		jr nz, .non_printable_keycode
+		bit KEYBOARD_STATEB_MODIFIER, e
+		jr nz, .non_printable_keycode
+
+		ld e, d
+		call keyboard_keycode_to_input_buffer_chars
+
+		.non_printable_keycode
+		ld hl, keyboard_scan_code_state
+		ld [hl], 0
+
+	.read_keyboard_input_buffer_continue
+	KEYBOARD_INPUT_BUFFER_UNREAD d
+	cp 2
+	jr nc, .read_keyboard_input_buffer_loop
+
+	xor a
+	ld [processing_keyboard_input], a
+
+	pop de
+	pop bc
+	pop hl
+	pop af
+	ret
 ; serial_interrupt_handler
