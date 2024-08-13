@@ -1,7 +1,9 @@
 include "hardware.inc"
 include "macros.inc"
+include "memory.inc"
 include "cursor.inc"
 include "char.inc"
+include "print.inc"
 include "input.inc"
 include "debug.inc"
 include "wozmon.inc"
@@ -9,7 +11,7 @@ include "wozmon.inc"
 export hex_map
 
 export _hardware
-export frame_count
+export input_method
 
 export on_button_down
 export on_button_up
@@ -28,15 +30,24 @@ reti
 section "start", ROM0[$0100]
 	jp init
 
-rept $150 - @ ; $104
-	db 0 
-endr
+section "header", rom0[$0104]
+	ds $150 - $104, 0
 
 section "global data", ROMX, align[8] ; aligned for easy access of hex_map
 hex_map: 			db "0123456789ABCDEF"
 
+input_method_names:
+	DW_STRING_PTR "ascii"
+	DW_STRING_PTR "keyboard packet"
+	DW_STRING_PTR "keyboard scancode"
+	DW_STRING_PTR "keyboard keycode"
+	DW_STRING_PTR "keyboard ascii"
+input_method_names_end:
+def INPUT_METHOD_NAMES_SIZE equ (input_method_names_end - input_method_names) / 2
+
 section "global variables", wramx
 _hardware:					ds 1 ; 0 = dmg, 1 = cgb, 2 = gba
+input_method: 				ds 1
 
 def STACK_SIZE equ $100
 
@@ -79,7 +90,7 @@ soft_init:
 	or a
 	jr z, .dmg_speed
 		; speed switch routine
-		ld a, %00000001
+		ld a, KEY1F_PREPARE
 		ld [rKEY1], a
 		stop
 	.dmg_speed
@@ -93,6 +104,9 @@ soft_init:
 	call init_cursor_mem
 	call init_character_mem
 	call init_keyboard_mem
+
+	ld a, INPUT_METHOD_NAMES_SIZE - 1
+	ld [input_method], a
 
 	; end of ram population
 
@@ -193,7 +207,7 @@ soft_init:
 	ld [rSC], a
 
 	ei
-	call _main
+	; call _main
 
 	if def(WOZMON)
 		.wozmon
@@ -201,23 +215,6 @@ soft_init:
 		jr .wozmon
 	endc
 
-	.getchar
-		call getchar
-
-		cp "\r"
-		jr nz, .not_cr
-			ld a, "\n"
-		.not_cr
-		cp $7f
-		jr nz, .not_delete
-			ld a, $08
-		.not_delete
-
-		call putchar
-		call cursor_reset_blink
-	jr .getchar
-
-; TODO: TEST
 ; value_on_screen
 ;
 ; input 
@@ -250,60 +247,45 @@ on_button_down:
 
 	bit PADB_SELECT, b
 	jr z, .no_button_select
+		push bc
 
-		ld a, [frame_count]
-		ld [rSB], a
+		ld a, [input_method]
+		inc a
+		cp INPUT_METHOD_NAMES_SIZE
+		jr c, .no_carry_input_method
+			xor a
+		.no_carry_input_method
+		ld [input_method], a
 
-		ld a, SCF_START | SCF_SOURCE
-		ld [rSC], a
-
-		ld a, [frame_count]
-		ld d, 0
+		add a
 		ld e, a
+		ld d, 0
 
-		PRINTF "\rByte out: %c %x %d\n", de, de, de
+		ld hl, input_method_names
+		add hl, de
 
-		DPUTS "send serial byte"
+		ldi a, [hl]
+		ld h, [hl]
+		ld l, a
+
+		PRINTF "input method: %s\n", hl
 	
+		pop bc
 	.no_button_select
 
-	ret 
-; on_button_down
-
-; on_button_up
-on_button_up:
-	bit PADB_START, b
-	jr z, .no_button_start
-		di
-		jp soft_init
-	.no_button_start
-	ret 
-; on_button_up
-
-; on_button_held
-on_button_held:
 	bit PADB_A, b
 	jr z, .no_button_a
 		push bc
-		ld a, "A"
-		call putchar
+
 		pop bc
 	.no_button_a
 	
 	bit PADB_B, b
 	jr z, .no_button_b
 		push bc
-		ld a, " "
-		call putchar
+		
 		pop bc
 	.no_button_b
-
-	ret 
-; on_button_held
-
-; on_button_repeat
-on_button_repeat:
-	call cursor_reset_blink
 
 	bit PADB_LEFT, b
 	jr z, .no_button_left
@@ -328,6 +310,25 @@ on_button_repeat:
 		ld hl, cursor_y
 		inc [hl]
 	.no_button_down
-
 	ret
+; on_button_down
+
+; on_button_up
+on_button_up:
+	bit PADB_START, b
+	jr z, .no_button_start
+		di
+		jp soft_init
+	.no_button_start
+	ret 
+; on_button_up
+
+; on_button_held
+on_button_held:
+	ret 
+; on_button_held
+
+; on_button_repeat
+on_button_repeat:
+	jp on_button_down
 ; on_button_repeat
