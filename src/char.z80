@@ -7,6 +7,8 @@ include "debug.inc"
 include "macros.inc"
 
 export character_window_offset
+export putchar_escape_sequence_handler_active
+export putchar_escape_sequence_handler_ptr
 
 export character_buffer
 export character_buffer_end
@@ -28,6 +30,8 @@ export puts
 
 section "character variables", WRAMX
 character_window_offset:	ds 1
+putchar_escape_sequence_handler_active: 	ds 1
+putchar_escape_sequence_handler_ptr: 		ds 2
 
 section "character output buffer", WRAMX, ALIGN[8]
 character_buffer: 		ds SCRN_X_B * SCRN_VY_B
@@ -45,6 +49,7 @@ section "character functions", ROMX
 init_character_mem:
 	xor a
 	ld [character_window_offset], a
+	ld [putchar_escape_sequence_handler_ptr], a
 
 	ld hl, character_update_table
 	ld bc, character_update_table_end - character_update_table
@@ -330,6 +335,10 @@ _putchar:
 ;
 ; destroys `af`, `bc`, `de`, `hl`
 putchar:
+	ld hl, putchar_escape_sequence_handler_active
+	bit PUTCHAR_ESCAPE_SEQUENCE_HANDLERB_ACTIVE, [hl]
+	jr nz, .escape_sequence_handler
+
 	cp " " 		; 0 to $1f
 	jr c, .c0_control_code
 	cp $7f 		; delete and above
@@ -386,6 +395,15 @@ putchar:
 	.return_without_write
 	pop af
 	ret
+
+	.escape_sequence_handler
+		ld hl, putchar_escape_sequence_handler_ptr
+		ld b, a
+		ldi a, [hl]
+		ld h, [hl]
+		ld l, a
+		ld a, b
+		jp hl
 
 	.c0_control_code
 		add a 			; sla a
