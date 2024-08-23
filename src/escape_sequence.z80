@@ -1,0 +1,60 @@
+include "debug.inc"
+
+export fs_escape_sequence
+
+export escape_sequence_ris
+
+
+; https://en.wikipedia.org/wiki/ISO/IEC_2022#Other_control_functions
+section "fs escape sequence jump table", romx, align[8]
+fs_escape_sequence:
+;  function ptr           abbr hex
+dw escape_sequence_dmi  ; DMI  $60
+dw escape_sequence_int  ; INT  $61
+dw escape_sequence_emi  ; EMI  $62
+dw escape_sequence_ris  ; RIS  $63
+dw escape_sequence_cmd  ; CMD  $64
+dw escape_sequence_stub ;      $65
+dw escape_sequence_stub ;      $66
+dw escape_sequence_stub ;      $67
+dw escape_sequence_stub ;      $68
+dw escape_sequence_stub ;      $69
+dw escape_sequence_stub ;      $6a
+dw escape_sequence_stub ;      $6b
+dw escape_sequence_stub ;      $6c
+dw escape_sequence_stub ;      $6d
+dw escape_sequence_ls2  ; LS2  $6e
+dw escape_sequence_ls3  ; LS3  $6f
+dw escape_sequence_stub ;      $70
+dw escape_sequence_stub ;      $71
+dw escape_sequence_stub ;      $72
+dw escape_sequence_stub ;      $73
+dw escape_sequence_stub ;      $74
+dw escape_sequence_stub ;      $75
+dw escape_sequence_stub ;      $76
+dw escape_sequence_stub ;      $77
+dw escape_sequence_stub ;      $78
+dw escape_sequence_stub ;      $79
+dw escape_sequence_stub ;      $7a
+dw escape_sequence_stub ;      $7b
+dw escape_sequence_ls3r ; LS3R $7c
+dw escape_sequence_ls2r ; LS2R $7d
+dw escape_sequence_ls1r ; LS1R $7e
+
+
+; https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h3-Controls-beginning-with-ESC
+section "escape sequence handlers", romx
+escape_sequence_stub:
+escape_sequence_dmi:
+escape_sequence_int:
+escape_sequence_emi:
+escape_sequence_ris:
+escape_sequence_cmd:
+escape_sequence_ls2:
+escape_sequence_ls3:
+escape_sequence_ls3r:
+escape_sequence_ls2r:
+escape_sequence_ls1r:
+	add "`"
+	DPUTS "fs escape sequence $%A%"
+	ret

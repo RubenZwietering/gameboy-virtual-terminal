@@ -1,4 +1,6 @@
 include "hardware.inc"
+include "char.inc"
+include "debug.inc"
 
 export c0_control_code
 
@@ -62,7 +64,6 @@ c0_control_code.tc10:
 c0_control_code.can:
 c0_control_code.em:
 c0_control_code.sub_:
-c0_control_code.esc:
 c0_control_code.is4:
 c0_control_code.is3:
 c0_control_code.is2:
@@ -130,3 +131,71 @@ c0_control_code.fe5:
 	ld [cursor_x], a
 
 	ret
+
+c0_control_code.esc:
+	PUTCHAR_ESCAPE_SEQUENCE_HANDLER_SET escape_code_handler
+	ret
+
+; https://en.wikipedia.org/wiki/ISO/IEC_2022#General_syntax_of_escape_sequences
+escape_code_handler:
+	; 0 to $1f are undefined behaviour
+	cp $20
+	ret c
+
+	; nF escape sequence ($20 to $2f)
+	cp $30
+	jr c, .nf_escape_sequence
+
+	; Fp escape sequence ($30 to $3f)
+	cp $40
+	jr c, .fp_escape_sequence
+
+	; Fe escape sequence ($40 to $5f)
+	cp $60
+	jr c, .fe_escape_sequence
+
+	; Fs escape sequence ($60 to $7e)
+	cp $7f
+	jr c, .fs_escape_sequence
+
+	; $7f to $ff are undefined behaviour
+	ret
+
+	; https://en.wikipedia.org/wiki/ANSI_escape_code#nF_Escape_sequences
+	.nf_escape_sequence
+		PUTCHAR_ESCAPE_SEQUENCE_HANDLER_RES
+		; TODO
+		DPUTS "nf escape sequence $%A%"
+		ret
+
+	; https://en.wikipedia.org/wiki/ANSI_escape_code#Fp_Escape_sequences
+	.fp_escape_sequence
+		PUTCHAR_ESCAPE_SEQUENCE_HANDLER_RES
+		DPUTS "fp escape sequence $%A%"
+		ret
+
+	; https://en.wikipedia.org/wiki/ANSI_escape_code#Fe_Escape_sequences
+	.fe_escape_sequence
+		PUTCHAR_ESCAPE_SEQUENCE_HANDLER_RES
+
+		sub "@"
+		add a 			; sla a
+		ld h, high(c1_control_code)
+		ld l, a
+		ldi a, [hl]
+		ld h, [hl]
+		ld l, a
+		jp hl
+
+	; https://en.wikipedia.org/wiki/ANSI_escape_code#Fs_Escape_sequences
+	.fs_escape_sequence
+		PUTCHAR_ESCAPE_SEQUENCE_HANDLER_RES
+
+		sub "`"
+		add a 			; sla a
+		ld h, high(fs_escape_sequence)
+		ld l, a
+		ldi a, [hl]
+		ld h, [hl]
+		ld l, a
+		jp hl

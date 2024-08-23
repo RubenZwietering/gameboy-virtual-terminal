@@ -70,6 +70,7 @@ ASRCS:=							\
 	crash.z80					\
 	cursor.z80					\
 	div.z80						\
+	escape_sequence.z80			\
 	input.z80					\
 	joypad.z80					\
 	keyboard.z80				\
