@@ -39,7 +39,7 @@ hex_map: 			db "0123456789ABCDEF"
 input_method_names:
 	DW_STRING_PTR "ascii"
 	DW_STRING_PTR "keyboard packet"
-	DW_STRING_PTR "keyboard scancode"
+	DW_STRING_PTR "keyboard scan code"
 	DW_STRING_PTR "keyboard keycode"
 	DW_STRING_PTR "keyboard ascii"
 input_method_names_end:

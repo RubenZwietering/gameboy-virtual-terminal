@@ -73,8 +73,26 @@ serial_interrupt_handler:
 	.read_keyboard_input_buffer_loop
 		KEYBOARD_INPUT_BUFFER_POP d
 		KEYBOARD_INPUT_BUFFER_POP e
-		
+
+		ld a, [input_method]
+		cp 1
+		jr nz, .not_keyboard_packet_mode
+			INPUT_BUFFER_PUSH d
+			INPUT_BUFFER_PUSH e
+			jr .read_keyboard_input_buffer_continue
+		.not_keyboard_packet_mode
+
 		call keyboard_packet_to_scan_code
+
+		ld b, a
+		ld a, [input_method]
+		cp 2
+		jr nz, .not_keyboard_scan_code_mode
+			INPUT_BUFFER_PUSH b
+			jr .read_keyboard_input_buffer_continue
+		.not_keyboard_scan_code_mode
+		ld a, b
+
 		or a
 		jr z, .read_keyboard_input_buffer_continue
 
@@ -97,6 +115,19 @@ serial_interrupt_handler:
 		or a
 		jr z, .read_keyboard_input_buffer_continue
 
+		ld b, a
+		ld a, [input_method]
+		cp 3
+		jr nz, .not_keyboard_keycode_mode
+			bit KEYBOARD_STATEB_KEY_UP, e
+			jr z, .not_keyboard_keycode_mode_up
+				set 7, b
+			.not_keyboard_keycode_mode_up
+			INPUT_BUFFER_PUSH b
+			jr .non_printable_keycode
+		.not_keyboard_keycode_mode
+		ld a, b
+
 		bit KEYBOARD_STATEB_KEY_UP, e
 		jr nz, .non_printable_keycode
 		bit KEYBOARD_STATEB_MODIFIER, e
@@ -112,7 +143,7 @@ serial_interrupt_handler:
 	.read_keyboard_input_buffer_continue
 	KEYBOARD_INPUT_BUFFER_UNREAD d
 	cp 2
-	jr nc, .read_keyboard_input_buffer_loop
+	jp nc, .read_keyboard_input_buffer_loop
 
 	xor a
 	ld [processing_keyboard_input], a
