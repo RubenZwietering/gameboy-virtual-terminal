@@ -278,6 +278,12 @@ _cursor_up:
 ; _cursor_up
 
 
+; getchar.pause
+	getchar.pause
+	halt
+	nop ; halt bug
+	; fallthrough
+
 ; _getchar
 ; 
 ; c function signiature:
@@ -288,9 +294,7 @@ _cursor_up:
 ; 
 ; destroys `af`, `b`, `hl`
 _getchar:
-	jr getchar
-; _getchar
-
+	; fallthrough
 
 ; getchar
 ;
@@ -298,16 +302,14 @@ _getchar:
 ; - `a` : character
 ;
 ; destroys `af`, `b`, `hl`
-	getchar.pause
-	halt
-	nop ; halt bug
 getchar:
 	INPUT_BUFFER_UNREAD
-	jr z, .pause
+	jr z, .pause ; above the function
 
 	INPUT_BUFFER_POP a
 	ret
 ; getchar
+; _getchar
 
 
 ; _putchar
