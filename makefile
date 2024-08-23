@@ -10,6 +10,8 @@ IDIR:=inc
 LDIR:=lib
 SDIR:=src
 
+DIRS:=$(ODIR) $(DDIR) $(BDIR)
+
 # https://rgbds.gbdev.io/docs/master/rgbasm.1
 ASM:=rgbasm
 AFLAGS:=-Wall -I $(IDIR) -D DEBUG -D WOZMON_OPTIMIZED
@@ -94,7 +96,7 @@ GFXS:=$(patsubst %.png,$(BDIR)/%.2bpp,$(GSRCS))
 OUT:=$(BDIR)/$(PROG).gb
 SYM:=$(BDIR)/$(PROG).sym
 
-all: $(ODIR) $(DDIR) $(BDIR) $(OUT)
+all: $(DIRS) $(OUT)
 
 $(OUT): $(GFXS) $(OBJS)
 	$(LINK) $(LFLAGS) -n $(SYM) -o $@ $(OBJS)
@@ -116,8 +118,8 @@ $(ODIR)/%.c.z80: $(SDIR)/%.c
 $(BDIR)/%.2bpp: $(GDIR)/%.png
 	$(GFX) $(GFLAGS) -o $@ $^
 
-$(ODIR) $(DDIR) $(BDIR):
-	mkdir -p $@
+$(DIRS):
+	[[ $$(realpath '$@') == $$(realpath .)* ]] && mkdir -p '$@'
 
 .PHONY: all run flash clean
 
@@ -127,7 +129,10 @@ run: all
 flash: all
 	flashgbx --mode dmg --action flash-rom $(OUT)
 
+define LF
+
+
+endef
+
 clean:
-	-test -d "$(ODIR)" && rm -f ./$(ODIR)/* && rmdir ./$(ODIR)
-	-test -d "$(DDIR)" && rm -f ./$(DDIR)/* && rmdir ./$(DDIR)
-	-test -d "$(BDIR)" && rm -f ./$(BDIR)/* && rmdir ./$(BDIR)
+	$(foreach DIR,$(DIRS),-[[ $$(realpath '$(DIR)') == $$(realpath .)* ]] && rm -rf '$(DIR)'$(LF))
