@@ -6,14 +6,14 @@ export memcpyh
 export memcpy
 export memseth
 export memset
-export memxorh
-export memxor
+export memcplh
+export memcpl
 export vmemcpyh
 export vmemcpy
 export vmemseth
 export vmemset
-export vmemxorh
-export vmemxor
+export vmemcplh
+export vmemcpl
 
 section "memory functions", ROMX
 ; ld_hl_pc
@@ -143,34 +143,33 @@ memset:
 	ret
 ; memset
 
-
-; memxorh
+; memcplh
 ;
-; 8 bit memxor. if a size of 0 is passed, 256 bytes are xored instead
+; 8 bit memcpl. if a size of 0 is passed, 256 bytes are complemented instead
 ;
 ; input
 ; - `hl` : destination
 ; - `bc` : size
 ;
 ; destroys `af`, `c`, `hl`
-memxorh:
+memcplh:
 	ld a, [hl]
 	cpl
 	ld [hli], a
 	dec c
-	jr nz, memxorh
+	jr nz, memcplh
 	ret
-; memxorh
+; memcplh
 
 
-; memxor
+; memcpl
 ;
 ; input
 ; - `hl` : destination
 ; - `bc` : size
 ;
 ; destroys `af`, `bc`, `hl`
-memxor:
+memcpl:
 	inc b
 	inc c
 	jr .skip
@@ -185,7 +184,7 @@ memxor:
 		dec b
 	jr nz, .loop
 	ret
-; memxor
+; memcpl
 
 
 ; vmemcpyh
@@ -288,35 +287,35 @@ vmemset:
 ; vmemset
 
 
-; vmemxorh
+; vmemcplh
 ;
-; 8 bit vram memset. if a size of 0 is passed, 256 bytes are xored instead
+; 8 bit vram memset. if a size of 0 is passed, 256 bytes are complemented instead
 ;
 ; input
 ; - `hl` : destination
 ; - `bc` : size
 ;
 ; destroys `af`, `bc`, `hl`
-vmemxorh:
+vmemcplh:
 	WAIT_BLANK
 
 	ld a, [hl]
 	cpl
 	ld [hli], a
 	dec c
-	jr nz, vmemxorh
+	jr nz, vmemcplh
 	ret
-; vmemxorh
+; vmemcplh
 
 
-; vmemxor
+; vmemcpl
 ;
 ; input
 ; - `hl` : destination
 ; - `bc` : size
 ;
 ; destroys `af`, `bc`, `hl`
-vmemxor:
+vmemcpl:
 	inc b
 	inc c
 	jr .skip
@@ -333,4 +332,4 @@ vmemxor:
 		dec b
 	jr nz, .loop
 	ret
-; vmemxor
+; vmemcpl
