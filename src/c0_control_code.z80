@@ -133,7 +133,7 @@ c0_control_code.fe5:
 	ret
 
 c0_control_code.esc:
-	PUTCHAR_ESCAPE_SEQUENCE_HANDLER_SET escape_code_handler
+	PUTCHAR_SEQUENCE_HANDLER_SET escape_code_handler
 	ret
 
 ; https://en.wikipedia.org/wiki/ISO/IEC_2022#General_syntax_of_escape_sequences
@@ -163,20 +163,20 @@ escape_code_handler:
 
 	; https://en.wikipedia.org/wiki/ANSI_escape_code#nF_Escape_sequences
 	.nf_escape_sequence
-		PUTCHAR_ESCAPE_SEQUENCE_HANDLER_RES
+		PUTCHAR_SEQUENCE_HANDLER_RES
 		; TODO
 		DPUTS "nf escape sequence $%A%"
 		ret
 
 	; https://en.wikipedia.org/wiki/ANSI_escape_code#Fp_Escape_sequences
 	.fp_escape_sequence
-		PUTCHAR_ESCAPE_SEQUENCE_HANDLER_RES
+		PUTCHAR_SEQUENCE_HANDLER_RES
 		DPUTS "fp escape sequence $%A%"
 		ret
 
 	; https://en.wikipedia.org/wiki/ANSI_escape_code#Fe_Escape_sequences
 	.fe_escape_sequence
-		PUTCHAR_ESCAPE_SEQUENCE_HANDLER_RES
+		PUTCHAR_SEQUENCE_HANDLER_RES
 
 		sub "@"
 		add a 			; sla a
@@ -189,7 +189,7 @@ escape_code_handler:
 
 	; https://en.wikipedia.org/wiki/ANSI_escape_code#Fs_Escape_sequences
 	.fs_escape_sequence
-		PUTCHAR_ESCAPE_SEQUENCE_HANDLER_RES
+		PUTCHAR_SEQUENCE_HANDLER_RES
 
 		sub "`"
 		add a 			; sla a
