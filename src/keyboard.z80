@@ -505,22 +505,26 @@ keyboard_keycode_to_input_buffer_chars:
 		ret
 
 	macro KEYCODE_SEQUENCE_SHORT
+		static_assert fatal, !(BYTELEN(\1) != 1), "Invalid argument"
 		ld d, \1
 		jp .keycode_sequence_short
 	endm
 
 	macro KEYCODE_SEQUENCE_LONG
-		if high(\1) == 0
+		if BYTELEN(\1) == 1
 			xor a
 			ld d, \1
+		elif BYTELEN(\1) == 2
+			ld a, STRBYTE(\1, 1)
+			ld d, STRBYTE(\1, 0)
 		else
-			ld a, high(\1)
-			ld d, low(\1)
+			fail "Invalid argument"
 		endc
 		jp .keycode_sequence_long
 	endm
 
 	macro KEYCODE_SEQUENCE_KP
+		static_assert fatal, !(BYTELEN(\1) != 1), "Invalid argument"
 		bit KEY_MODIFIERB_NUMLOCK, e
 		jr z, .no_numlock\@
 			\2 \3
